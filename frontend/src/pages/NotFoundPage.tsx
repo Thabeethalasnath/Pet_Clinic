@@ -35,12 +35,6 @@ export const NotFoundPage: React.FC = () => {
                 <span>Return to Home</span>
               </Button>
             </Link>
-            <Link to="/find-a-vet">
-              <Button variant="secondary" size="lg" className="flex items-center gap-2">
-                <Search className="w-4 h-4" />
-                <span>Find a Vet</span>
-              </Button>
-            </Link>
           </div>
         </div>
       </main>
