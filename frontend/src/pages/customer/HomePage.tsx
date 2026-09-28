@@ -244,19 +244,132 @@ export const HomePage: React.FC = () => {
 
         {/* 6. Vets Section */}
         <section id="vets" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-8">
-            {/* Header Content */}
-            <Reveal delay={0.05} className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-              <div className="space-y-3 max-w-2xl">
-                <Badge variant="orange" className="inline-flex">
-                  BEST CARE, RIGHT NEAR YOU
-                </Badge>
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#14261C] tracking-tight">
-                  Meet Their New <span className="text-[#F47B3A]">Favorite</span> Human.
-                </h2>
-                <p className="text-base text-[#445548] leading-relaxed">
-                  Verified vets. Happy pets. Less worry for you.
-                </p>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            {/* Left Content */}
+            <div className="lg:col-span-5 space-y-6 relative">
+              <Badge variant="orange" className="inline-flex">
+                BEST CARE, RIGHT NEAR YOU
+              </Badge>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#16241B] tracking-tight">
+                Meet Their New <span className="text-[#EF7C3C]">Favorite</span> Human.
+              </h2>
+              <p className="text-base text-[#445548] leading-relaxed">
+                Verified vets. Happy pets. Less worry for you.
+              </p>
+
+              {/* P.S. Badge */}
+              <div className="pt-2 relative">
+                <div className="relative inline-flex items-center ml-4 sm:ml-12 lg:ml-16">
+                  <div className="inline-flex items-center bg-white border border-[#E8E2D4] px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-xs">
+                    <span className="text-xs sm:text-sm font-bold text-[#16241B] flex items-center gap-1.5">
+                      P.S. They'll get extra treats
+                    </span>
+                  </div>
+
+                  <div className="hidden sm:block absolute left-[52%] bottom-[80%] w-52 sm:w-60 lg:w-68 h-28 pointer-events-none z-10">
+                    <svg
+                      className="w-full h-full text-[#14261C] overflow-visible"
+                      viewBox="0 0 240 100"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M 8,92 C 12,28 50,8 115,10 C 160,12 190,24 225,18" />
+                      <path d="M 212,10 L 228,18 L 215,27" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Cards Stack / Slider */}
+            <div className="lg:col-span-7 relative">
+              <div
+                ref={vetScrollRef}
+                className="flex items-center gap-6 overflow-x-auto no-scrollbar py-2 px-1 scroll-smooth"
+              >
+                {loadingVets ? (
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <div key={i} className="w-[300px] sm:w-[320px] shrink-0 bg-white rounded-2xl p-4 border border-[#ECE5D8] space-y-3">
+                      <Skeleton className="w-full aspect-[4/3] rounded-2xl" />
+                      <Skeleton className="h-5 w-1/2" />
+                      <Skeleton className="h-4 w-1/3" />
+                    </div>
+                  ))
+                ) : filteredVets.length > 0 ? (
+                  filteredVets.map((vet) => {
+                    const photo = getVetImageUrl(vet.name, vet.photoUrl, vet.id);
+                    return (
+                    <Card
+                      key={vet.id}
+                      onClick={() => navigate(`/vets/${vet.id}`)}
+                      className="w-[300px] sm:w-[320px] shrink-0 space-y-4 group bg-white rounded-3xl p-5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer"
+                    >
+                      <div className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#F4EFE6] flex items-center justify-center">
+                        {photo ? (
+                          <img
+                            src={photo}
+                            alt={vet.name}
+                            className="w-full h-full object-cover object-[center_20%] rounded-2xl"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-[#F4EFE6] text-[#16241B]">
+                            <span className="text-4xl font-black">{vet.name.charAt(0)}</span>
+                            <span className="text-xs text-gray-500 font-semibold mt-1">{vet.name}</span>
+                          </div>
+                        )}
+                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-xs px-2.5 py-1 rounded-full text-xs font-extrabold text-[#16241B] shadow-xs flex items-center gap-1 z-10">
+                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
+                            <>
+                              <span className="text-yellow-500">★</span> {vet.rating.toFixed(1)}
+                            </>
+                          ) : (
+                            <span className="text-gray-400 text-[11px] font-bold">No reviews</span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-[#16241B] group-hover:text-[#EF7C3C] transition-colors">
+                          {vet.name}
+                        </h3>
+                        <p className="text-xs font-bold text-[#EF7C3C] mt-0.5">
+                          {vet.specialization}
+                        </p>
+                        {vet.secondarySpecialization && (
+                          <p className="text-xs text-[#556658] font-medium mt-0.5">
+                            {vet.secondarySpecialization}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-1 text-xs text-[#556658]">
+                        <div className="flex items-center gap-1.5 flex-wrap font-semibold">
+                          {vet.reviewsCount && vet.reviewsCount > 0 && vet.rating ? (
+                            <>
+                              <span className="text-[#F5A623] font-extrabold flex items-center gap-0.5">
+                                ★ {vet.rating.toFixed(1)}
+                              </span>
+                              <span>({vet.reviewsCount} review{vet.reviewsCount > 1 ? 's' : ''})</span>
+                            </>
+                          ) : (
+                            <span className="text-gray-400">No reviews yet</span>
+                          )}
+                          <span>•</span>
+                          <span>{vet.experienceYears || 7}+ yrs exp</span>
+                        </div>
+                        <p className="font-bold text-[#009E66] pt-0.5 text-xs">
+                          {formatCurrency(vet.consultationFee ?? 500)} / visit
+                        </p>
+                      </div>
+                    </Card>
+                    );
+                  })
+                ) : (
+                  <div className="w-full py-8 text-center text-[#5D6F63] text-sm font-semibold">
+                    No veterinarians listed for {activeCategory} at this time.
+                  </div>
+                )}
               </div>
             </Reveal>
 
@@ -276,9 +389,60 @@ export const HomePage: React.FC = () => {
         <Testimonials />
 
         {/* 8. Shared CTA Banner */}
-        <Reveal delay={0.1}>
-          <CtaBanner />
-        </Reveal>
+        <CtaBanner />
+
+        {/* 8. Feature Strip */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-6 border-y border-[#EDE6D8]">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-[#D8F3DC] flex items-center justify-center text-[#009E66] shrink-0">
+                <Headphones className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-extrabold text-[#16241B]">
+                  24/7 Vet Support
+                </h4>
+                <p className="text-xs text-[#556658]">We're always here</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-[#E0F2FE] flex items-center justify-center text-[#0369A1] shrink-0">
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-extrabold text-[#16241B]">
+                  Verified Vets Only
+                </h4>
+                <p className="text-xs text-[#556658]">100% background checked</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center text-[#8C6D00] shrink-0">
+                <ShoppingBag className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-extrabold text-[#16241B]">
+                  In-Store Pickup Available
+                </h4>
+                <p className="text-xs text-[#556658]">Ready at your nearest clinic</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-[#FCE7F3] flex items-center justify-center text-[#9D174D] shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="text-sm font-extrabold text-[#16241B]">
+                  Happiness Guarantee
+                </h4>
+                <p className="text-xs text-[#556658]">Or your money back</p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* 9. Footer */}

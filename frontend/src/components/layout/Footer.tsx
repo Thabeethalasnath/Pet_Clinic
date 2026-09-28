@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle, Heart, ArrowUp } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, Heart } from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 

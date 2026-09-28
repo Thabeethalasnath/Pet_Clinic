@@ -34,7 +34,7 @@ const testimonials: TestimonialItem[] = [
     quote: 'Finding a specialized feline clinician was effortless. The in-app medical records and prescription refills saved us so much time.',
     rating: 5,
     avatarBg: 'bg-[#D8F3DC]',
-    avatarColor: 'text-[#287A41]',
+    avatarColor: 'text-[#009E66]',
     tag: 'Clinic Booking',
   },
   {
@@ -146,37 +146,27 @@ export const Testimonials: React.FC = () => {
         </p>
       </Reveal>
 
-      {/* Testimonials Marquee or Static Grid */}
-      {prefersReduced ? (
-        <div className="flex lg:grid lg:grid-cols-4 gap-5 sm:gap-6 overflow-x-auto lg:overflow-x-visible no-scrollbar pb-3 lg:pb-0 scroll-smooth">
-          {testimonials.map((item) => renderCard(item))}
-        </div>
-      ) : (
-        <div
-          className="relative w-full overflow-hidden py-4 -my-4 [mask-image:linear-gradient(to_right,transparent_0%,black_5%,black_95%,transparent_100%)]"
-        >
-          <style>{`
-            @keyframes testimonialMarquee {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-            .testimonial-track {
-              display: flex;
-              width: max-content;
-              gap: 1.5rem;
-              animation: testimonialMarquee 50s linear infinite;
-            }
-            .testimonial-track:hover,
-            .testimonial-track:focus-within {
-              animation-play-state: paused;
-            }
-          `}</style>
-          <div className="testimonial-track">
-            {testimonials.map((item) => renderCard(item, false))}
-            {testimonials.map((item) => renderCard(item, true))}
-          </div>
-        </div>
-      )}
+                {/* Quote Text */}
+                <p className="text-xs sm:text-sm text-[#445548] leading-relaxed italic font-medium">
+                  "{item.quote}"
+                </p>
+              </div>
+
+              {/* Tag Footer */}
+              {item.tag && (
+                <div className="pt-4 mt-4 border-t border-[#F3EDE2] flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[#8C9B8F] uppercase tracking-wider">
+                    {item.tag}
+                  </span>
+                  <span className="text-[11px] font-semibold text-[#009E66] flex items-center gap-1">
+                    Verified Parent ✓
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 };
