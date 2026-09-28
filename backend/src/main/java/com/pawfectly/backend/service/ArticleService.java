@@ -157,11 +157,15 @@ public class ArticleService {
     }
 
     private ArticleDto mapToDto(Article article) {
+        String imgUrl = article.getImageUrl();
+        if (imgUrl == null || !imgUrl.startsWith("http")) {
+            imgUrl = resolveCloudinaryArticleImage(article.getTitle(), article.getCategory());
+        }
         return ArticleDto.builder()
                 .id(article.getId())
                 .title(article.getTitle())
                 .content(article.getContent())
-                .imageUrl(article.getImageUrl())
+                .imageUrl(imgUrl)
                 .petType(article.getPetType())
                 .category(article.getCategory() != null ? article.getCategory() : "Preventive Care")
                 .excerpt(article.getExcerpt())
@@ -169,5 +173,26 @@ public class ArticleService {
                 .isActive(article.getIsActive() != null ? article.getIsActive() : true)
                 .publishedAt(article.getPublishedAt())
                 .build();
+    }
+
+    private String resolveCloudinaryArticleImage(String title, String category) {
+        String t = title != null ? title.toLowerCase() : "";
+        String c = category != null ? category.toLowerCase() : "";
+        if (t.contains("nutrition") || c.contains("nutrition")) {
+            return "https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png";
+        }
+        if (t.contains("vaccin") || c.contains("vaccin")) {
+            return "https://res.cloudinary.com/vphylrop/image/upload/v1788896780/Vet_examining_a_cat_with_stethoscope.png";
+        }
+        if (t.contains("groom") || c.contains("groom")) {
+            return "https://res.cloudinary.com/vphylrop/image/upload/v1788896776/Golden_retriever_getting_a_bath_with_bubbles_and_rubber_duck.png";
+        }
+        if (t.contains("parasite") || t.contains("flea") || t.contains("sick") || c.contains("prevent")) {
+            return "https://res.cloudinary.com/vphylrop/image/upload/v1788896775/Sick_dog_with_ice_pack_on_head.png";
+        }
+        if (t.contains("cat") || t.contains("play") || c.contains("behaviour")) {
+            return "https://res.cloudinary.com/vphylrop/image/upload/v1788896779/Playful_cat_with_colorful_ball.png";
+        }
+        return "https://res.cloudinary.com/vphylrop/image/upload/v1788896774/Golden_retriever_eating_healthy_food_with_carrots.png";
     }
 }

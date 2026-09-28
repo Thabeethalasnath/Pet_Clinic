@@ -16,8 +16,6 @@ import {
   Check,
 } from 'lucide-react';
 
-import { FALLBACK_ARTICLES } from '../../data/mockArticles';
-
 interface ArticleDto {
   id: number;
   title: string;
@@ -77,9 +75,6 @@ export const ArticleDetailPage: React.FC = () => {
       return;
     }
 
-    const numId = Number(id);
-    const fallback = FALLBACK_ARTICLES.find((a) => a.id === numId);
-
     setLoading(true);
     setError(null);
 
@@ -109,7 +104,7 @@ export const ArticleDetailPage: React.FC = () => {
             }
           }
 
-          const pool = combined.length > 0 ? combined : FALLBACK_ARTICLES;
+          const pool = combined;
           const list = pool.filter((a) => a.id !== currentId);
           const matched = list.filter(
             (a) =>
@@ -119,8 +114,7 @@ export const ArticleDetailPage: React.FC = () => {
           setRelatedArticles(matched.length > 0 ? matched.slice(0, 3) : list.slice(0, 3));
         })
         .catch(() => {
-          const list = FALLBACK_ARTICLES.filter((a) => a.id !== currentId);
-          setRelatedArticles(list.slice(0, 3));
+          setRelatedArticles([]);
         });
     };
 
@@ -140,13 +134,7 @@ export const ArticleDetailPage: React.FC = () => {
             loadRelated(res.data.id, currentCat, res.data.petType);
           })
           .catch(() => {
-            if (fallback) {
-              setArticle(fallback);
-              const currentCat = resolveCategory(fallback.title, fallback.category);
-              loadRelated(fallback.id, currentCat, fallback.petType);
-            } else {
-              setError('Failed to load article details.');
-            }
+            setError('Failed to load article details.');
           });
       })
       .finally(() => {

@@ -18,8 +18,6 @@ import {
 import { ProductCard, type ProductItemData } from '../../components/products/ProductCard';
 import { ProductDetailModal } from '../../components/products/ProductDetailModal';
 
-import { FALLBACK_PRODUCTS } from '../../data/mockProducts';
-
 // Subcategory Circular Icons map
 const SUBCATEGORY_ICON_MAP: Record<string, string> = {
   All: 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=120&auto=format&fit=crop&q=80',
@@ -78,11 +76,9 @@ export const PetEssentialsPage: React.FC = () => {
   const [petTypeAccordionOpen, setPetTypeAccordionOpen] = useState<boolean>(true);
   const [brandAccordionOpen, setBrandAccordionOpen] = useState<boolean>(true);
 
-  // Products State
-  const [allProducts, setAllProducts] = useState<ProductItemData[]>(() =>
-    FALLBACK_PRODUCTS.filter((p) => p.productType === 'ESSENTIAL')
-  );
-  const [loading, setLoading] = useState<boolean>(false);
+// Products State
+  const [allProducts, setAllProducts] = useState<ProductItemData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   // Sync URL search params
@@ -122,14 +118,10 @@ export const PetEssentialsPage: React.FC = () => {
     setError(null);
     try {
       const res = await apiClient.get<ProductItemData[]>('/pet-essentials/products');
-      if (res.data && res.data.length > 0) {
-        setAllProducts(res.data);
-      } else {
-        setAllProducts(FALLBACK_PRODUCTS.filter((p) => p.productType === 'ESSENTIAL'));
-      }
-    } catch {
-      // Gracefully fallback to rich local essentials catalog
-      setAllProducts(FALLBACK_PRODUCTS.filter((p) => p.productType === 'ESSENTIAL'));
+      setAllProducts(res.data || []);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to load products');
+      setAllProducts([]);
     } finally {
       setLoading(false);
     }

@@ -146,17 +146,15 @@ const petTypes = [
   },
 ];
 
-import { FALLBACK_ARTICLES } from '../../data/mockArticles';
-
 export const BrowsePetHealthTipsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const petTypeParam = searchParams.get('petType');
 
-  const [articles, setArticles] = useState<ArticleDto[]>(FALLBACK_ARTICLES);
+  const [articles, setArticles] = useState<ArticleDto[]>([]);
   const [selectedPetType, setSelectedPetType] = useState<string | null>(petTypeParam || null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -192,10 +190,11 @@ export const BrowsePetHealthTipsPage: React.FC = () => {
             existingTitles.add(tip.title.toLowerCase().trim());
           }
         }
-        setArticles(combined.length > 0 ? combined : FALLBACK_ARTICLES);
+        setArticles(combined);
       })
-      .catch(() => {
-        setArticles(FALLBACK_ARTICLES);
+      .catch((err) => {
+        setError(err?.message || 'Failed to load pet health tips');
+        setArticles([]);
       })
       .finally(() => {
         setLoading(false);
