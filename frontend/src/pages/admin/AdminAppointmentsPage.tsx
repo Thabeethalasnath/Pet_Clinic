@@ -292,7 +292,7 @@ export const AdminAppointmentsPage: React.FC = () => {
               onClick={() => openMedicalModal(row)}
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                 row.hasMedicalRecord
-                  ? 'bg-[#EBF7EE] text-[#287A41] hover:bg-[#287A41] hover:text-white'
+                  ? 'bg-[#EBF7EE] text-[#009E66] hover:bg-[#009E66] hover:text-white'
                   : 'bg-[#EFF6FF] text-[#3B7DD8] hover:bg-[#3B7DD8] hover:text-white'
               }`}
               title={row.hasMedicalRecord ? 'View / Edit Medical Record' : 'Add Medical Record'}

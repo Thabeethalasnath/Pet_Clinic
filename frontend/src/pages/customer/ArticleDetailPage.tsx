@@ -16,6 +16,8 @@ import {
   Check,
 } from 'lucide-react';
 
+import { FALLBACK_ARTICLES } from '../../data/mockArticles';
+
 interface ArticleDto {
   id: number;
   title: string;
@@ -75,6 +77,9 @@ export const ArticleDetailPage: React.FC = () => {
       return;
     }
 
+    const numId = Number(id);
+    const fallback = FALLBACK_ARTICLES.find((a) => a.id === numId);
+
     setLoading(true);
     setError(null);
 
@@ -104,7 +109,8 @@ export const ArticleDetailPage: React.FC = () => {
             }
           }
 
-          const list = combined.filter((a) => a.id !== currentId);
+          const pool = combined.length > 0 ? combined : FALLBACK_ARTICLES;
+          const list = pool.filter((a) => a.id !== currentId);
           const matched = list.filter(
             (a) =>
               resolveCategory(a.title, a.category) === currentCat ||
@@ -112,7 +118,10 @@ export const ArticleDetailPage: React.FC = () => {
           );
           setRelatedArticles(matched.length > 0 ? matched.slice(0, 3) : list.slice(0, 3));
         })
-        .catch(() => {});
+        .catch(() => {
+          const list = FALLBACK_ARTICLES.filter((a) => a.id !== currentId);
+          setRelatedArticles(list.slice(0, 3));
+        });
     };
 
     apiClient
@@ -130,9 +139,14 @@ export const ArticleDetailPage: React.FC = () => {
             const currentCat = resolveCategory(res.data.title, res.data.category);
             loadRelated(res.data.id, currentCat, res.data.petType);
           })
-          .catch((err: unknown) => {
-            const msg = err instanceof Error ? err.message : 'Failed to load details.';
-            setError(msg);
+          .catch(() => {
+            if (fallback) {
+              setArticle(fallback);
+              const currentCat = resolveCategory(fallback.title, fallback.category);
+              loadRelated(fallback.id, currentCat, fallback.petType);
+            } else {
+              setError('Failed to load article details.');
+            }
           });
       })
       .finally(() => {
@@ -151,7 +165,7 @@ export const ArticleDetailPage: React.FC = () => {
   const category = resolveCategory(article?.title, article?.category);
   const colors = categoryColorMap[category] || {
     bg: 'bg-[#E6F9EC]',
-    text: 'text-[#287A41]',
+    text: 'text-[#009E66]',
   };
 
   const readTime = article ? computeReadTime(article.content, article.excerpt) : 5;
@@ -160,15 +174,21 @@ export const ArticleDetailPage: React.FC = () => {
     <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col antialiased">
       <Navbar activePage="health-tips" />
 
-      <main className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-20 w-full space-y-10">
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-14 w-full space-y-8">
         {/* Back Button */}
         <div>
           <button
-            onClick={() => navigate('/health-tips')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold shadow-2xs hover:shadow-md hover:border-[#3FA65C] transition-all cursor-pointer group"
+            onClick={() => {
+              if (window.history.state && window.history.state.idx > 0) {
+                navigate(-1);
+              } else {
+                navigate('/health-tips');
+              }
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold shadow-2xs hover:shadow-md hover:border-[#009E66] transition-all cursor-pointer group"
           >
             <ArrowLeft className="w-4 h-4 text-[#009E66] group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Health Tips</span>
+            <span>Back</span>
           </button>
         </div>
 
@@ -190,9 +210,9 @@ export const ArticleDetailPage: React.FC = () => {
             onRetry={() => navigate('/health-tips')}
           />
         ) : (
-          <article className="space-y-8">
+          <article className="space-y-6 sm:space-y-7">
             {/* Header Meta */}
-            <div className="space-y-4">
+            <div className="space-y-3.5">
               <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${colors.bg} ${colors.text} border border-black/5 shadow-2xs`}
@@ -200,7 +220,7 @@ export const ArticleDetailPage: React.FC = () => {
                   {category}
                 </span>
                 {article.petType && (
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-[#556658] border border-[#EDE7D9]">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-white text-[#009E66] border border-[#CBDAC6]">
                     For {article.petType}
                   </span>
                 )}
@@ -210,7 +230,7 @@ export const ArticleDetailPage: React.FC = () => {
                 {article.title}
               </h1>
 
-              <div className="flex flex-wrap items-center justify-between gap-4 pt-2 pb-4 border-b border-[#EAE3D4] text-xs text-[#88998C] font-semibold">
+              <div className="flex flex-wrap items-center justify-between gap-4 pt-1 pb-3 border-b border-[#EAE3D4] text-xs text-[#88998C] font-semibold">
                 <div className="flex items-center gap-4">
                   <span className="flex items-center gap-1.5">
                     <Calendar className="w-4 h-4 text-[#009E66]" />
@@ -230,11 +250,11 @@ export const ArticleDetailPage: React.FC = () => {
 
                 <button
                   onClick={handleShare}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold hover:bg-[#E6F9EC] hover:text-[#287A41] hover:border-[#3FA65C] transition-all cursor-pointer shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] text-xs font-bold hover:bg-[#E6F9EC] hover:text-[#009E66] hover:border-[#009E66] transition-all cursor-pointer shadow-2xs"
                 >
                   {copied ? (
                     <>
-                      <Check className="w-3.5 h-3.5 text-[#287A41]" />
+                      <Check className="w-3.5 h-3.5 text-[#009E66]" />
                       <span>Link Copied!</span>
                     </>
                   ) : (
@@ -258,7 +278,7 @@ export const ArticleDetailPage: React.FC = () => {
 
             {/* Excerpt Banner */}
             {article.excerpt && (
-              <div className="p-5 sm:p-6 bg-[#E6F9EC]/80 border border-[#C3ECD0] rounded-2xl text-[#16241B] font-semibold text-base leading-relaxed italic shadow-2xs">
+              <div className="p-4 sm:p-5 bg-[#E6F9EC]/80 border border-[#CBDAC6] rounded-2xl text-[#16241B] font-semibold text-sm sm:text-base leading-relaxed italic shadow-2xs">
                 "{article.excerpt}"
               </div>
             )}
@@ -277,29 +297,22 @@ export const ArticleDetailPage: React.FC = () => {
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-8 border-t border-[#EAE3D4] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="pt-4 border-t border-[#EAE3D4] flex items-center justify-start">
               <Link
                 to="/health-tips"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#009E66] hover:bg-[#008757] text-white font-black text-sm shadow-md transition-all cursor-pointer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#009E66] hover:bg-[#008756] text-white font-black text-sm shadow-md transition-all cursor-pointer"
               >
-                <BookOpen className="w-4 h-4" />
+                <BookOpen className="w-4 h-4 text-white" />
                 <span>Explore All Health Tips</span>
               </Link>
-              <button
-                onClick={handleShare}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white border border-[#EDE7D9] text-[#16241B] font-bold text-xs shadow-2xs hover:shadow-md transition-all cursor-pointer"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>{copied ? 'Link Copied to Clipboard!' : 'Share Article'}</span>
-              </button>
             </div>
 
             {/* Related Articles Section */}
             {relatedArticles.length > 0 && (
-              <section className="pt-12 space-y-6">
+              <section className="pt-6 space-y-5">
                 <div className="flex items-center justify-between border-b border-[#EAE3D4] pb-4">
                   <h3 className="text-xl sm:text-2xl font-black text-[#16241B]">
-                    Related <span className="text-[#EF7C3C]">Health Tips</span>
+                    Related <span className="text-[#EF7C3C]">Health Tips</span>.
                   </h3>
                 </div>
 
@@ -308,7 +321,7 @@ export const ArticleDetailPage: React.FC = () => {
                     const relCat = resolveCategory(rel.title, rel.category);
                     const relColors = categoryColorMap[relCat] || {
                       bg: 'bg-[#E6F9EC]',
-                      text: 'text-[#287A41]',
+                      text: 'text-[#009E66]',
                     };
                     const relReadTime = computeReadTime(rel.content, rel.excerpt);
 
@@ -316,7 +329,7 @@ export const ArticleDetailPage: React.FC = () => {
                       <div
                         key={rel.id}
                         onClick={() => navigate(`/health-tips/${rel.id}`)}
-                        className="bg-white rounded-2xl p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all cursor-pointer flex flex-col group"
+                        className="bg-white rounded-2xl p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md hover:border-[#009E66]/30 transition-all cursor-pointer flex flex-col group"
                       >
                         <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#FAF6EE] mb-3">
                           <img
@@ -331,13 +344,16 @@ export const ArticleDetailPage: React.FC = () => {
                           </span>
                         </div>
 
-                        <h4 className="text-xs font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 flex-grow">
+                        <h4 className="text-xs font-black text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2 flex-grow">
                           {rel.title}
                         </h4>
 
                         <div className="pt-2.5 border-t border-[#F0EAE1] flex items-center justify-between text-[10px] text-[#88998C] font-semibold mt-2.5">
-                          <span>{relReadTime} min read</span>
-                          <div className="w-5 h-5 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-[#EF7C3C]" />
+                            {relReadTime} min read
+                          </span>
+                          <div className="w-5 h-5 rounded-full bg-[#FAF6EE] group-hover:bg-[#009E66] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
                             <ChevronRight className="w-3 h-3" />
                           </div>
                         </div>

@@ -200,7 +200,7 @@ export const AdminVetsPage: React.FC = () => {
       header: 'Consultation Fee',
       sortable: true,
       render: (row) => (
-        <span className="text-xs font-bold text-[#287A41]">
+        <span className="text-xs font-bold text-[#009E66]">
           {formatCurrency(row.consultationFee ?? 500)}
         </span>
       ),

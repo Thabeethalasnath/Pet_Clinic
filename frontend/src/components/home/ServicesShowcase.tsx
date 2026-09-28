@@ -149,7 +149,7 @@ export const ServicesShowcase: React.FC = () => {
             <div className="flex justify-center pt-6 sm:pt-8">
               <Link to="/services">
                 <Button
-                  variant="orange"
+                  variant="primary"
                   size="md"
                   showPaw
                   className="rounded-full px-6 shadow-md"

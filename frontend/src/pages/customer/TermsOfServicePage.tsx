@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import {
-  FileText,
   Clock,
   AlertTriangle,
   ChevronDown,
@@ -42,7 +41,7 @@ export const TermsOfServicePage: React.FC = () => {
             You are solely responsible for maintaining the confidentiality of your account credentials and password. Any actions taken through your authenticated account are deemed your responsibility. If you suspect unauthorized access, you must notify Pawfectly immediately at{' '}
             <a
               href="mailto:support@pawfectly.com"
-              className="text-[#1F4B43] font-bold underline"
+              className="text-[#009E66] font-bold underline"
             >
               support@pawfectly.com
             </a>
@@ -78,7 +77,7 @@ export const TermsOfServicePage: React.FC = () => {
       summary: 'Explicit in-store pickup terms: no home delivery, no online payment processing.',
       content: (
         <div className="space-y-3 text-sm text-[#445548] leading-relaxed">
-          <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6]/80 text-xs sm:text-sm text-[#1F4B43] font-semibold leading-relaxed">
+          <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6]/80 text-xs sm:text-sm text-[#009E66] font-semibold leading-relaxed">
             📦 In-Store Collection Policy: All orders placed through Pawfectly are prepared for physical pickup at our designated store location. Pawfectly does not offer shipping or home delivery services.
           </div>
           <p>
@@ -175,9 +174,9 @@ export const TermsOfServicePage: React.FC = () => {
             We may revise these Terms of Service periodically to reflect changes in our service offerings, in-store pickup procedures, or regulatory guidelines. Revisions will be posted here with an updated revision date.
           </p>
           <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6]/60 text-xs sm:text-sm space-y-1">
-            <p className="font-bold text-[#1F4B43]">Pawfectly Legal Department</p>
-            <p className="text-[#445548]">Email: <a href="mailto:terms@pawfectly.com" className="text-[#1F4B43] font-semibold underline">terms@pawfectly.com</a></p>
-            <p className="text-[#445548]">Postal Address: 104 Wellness Boulevard, Suite 200, Pet District</p>
+            <p className="font-bold text-[#009E66]">Pawfectly Legal Department</p>
+            <p className="text-[#445548]">Email: <a href="mailto:terms@pawfectly.com" className="text-[#009E66] font-semibold underline">terms@pawfectly.com</a></p>
+            <p className="text-[#445548]">Postal Address: 104 Wellness Boulevard, Indiranagar, Bengaluru, Karnataka 560038, India</p>
           </div>
         </div>
       ),
@@ -217,20 +216,16 @@ export const TermsOfServicePage: React.FC = () => {
         {/* Header Hero */}
         <section className="bg-gradient-to-b from-[#1F4B43] to-[#16241B] text-white py-5 sm:py-7 px-4 sm:px-6 lg:px-8 border-b border-[#23382A]">
           <div className="max-w-5xl mx-auto text-center space-y-2.5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#CBDAC6]/15 border border-[#CBDAC6]/30 text-[#CBDAC6] text-xs font-bold uppercase tracking-wider">
-              <FileText className="w-3.5 h-3.5 text-[#E3A23A]" />
-              User Agreement & Terms
-            </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Terms of <span className="text-[#E3A23A]">Service</span>
+              Terms of <span className="text-[#EF7C3C]">Service</span>
             </h1>
             <div className="flex items-center justify-center gap-3 text-xs sm:text-sm text-[#CBDAC6]/80 font-medium">
               <span className="inline-flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#E3A23A]" />
+                <Clock className="w-3.5 h-3.5 text-[#EF7C3C]" />
                 Last Updated: September 24, 2026
               </span>
               <span>•</span>
-              <span className="text-[#E3A23A] font-semibold">
+              <span className="text-[#EF7C3C] font-semibold">
                 Draft Documentation
               </span>
             </div>
@@ -240,8 +235,8 @@ export const TermsOfServicePage: React.FC = () => {
         {/* Content Container */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
           {/* Draft Disclaimer Notice */}
-          <div className="mb-8 p-5 rounded-2xl bg-[#FAF6EE] border-l-4 border-[#E3A23A] border-y border-r border-[#CBDAC6]/60 flex items-start gap-4">
-            <AlertTriangle className="w-6 h-6 text-[#E3A23A] shrink-0 mt-0.5" />
+          <div className="mb-8 p-5 rounded-2xl bg-[#FAF6EE] border-l-4 border-[#EF7C3C] border-y border-r border-[#CBDAC6]/60 flex items-start gap-4">
+            <AlertTriangle className="w-6 h-6 text-[#EF7C3C] shrink-0 mt-0.5" />
             <div className="text-xs sm:text-sm text-[#445548] leading-relaxed">
               <p className="font-bold text-[#1F4B43] text-sm sm:text-base">
                 Operational Draft Notice
@@ -266,14 +261,14 @@ export const TermsOfServicePage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleExpandAll}
-                className="px-3 py-1.5 rounded-lg bg-white border border-[#CBDAC6] text-xs font-bold text-[#1F4B43] hover:bg-[#F6F7F2] transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-[#009E66] text-white border border-[#009E66] text-xs font-bold hover:bg-[#008757] transition-colors cursor-pointer"
               >
                 Expand All
               </button>
               <button
                 type="button"
                 onClick={handleCollapseAll}
-                className="px-3 py-1.5 rounded-lg bg-white border border-[#CBDAC6] text-xs font-bold text-[#5E6E62] hover:bg-[#F6F7F2] transition-colors cursor-pointer"
+                className="px-3 py-1.5 rounded-lg bg-white border border-[#CBDAC6] text-xs font-bold text-[#009E66] hover:bg-[#F6F7F2] transition-colors cursor-pointer"
               >
                 Collapse All
               </button>
@@ -338,7 +333,7 @@ export const TermsOfServicePage: React.FC = () => {
           {/* Bottom Help Box */}
           <div className="mt-12 p-6 rounded-2xl bg-white border border-[#CBDAC6]/60 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="space-y-1 text-center sm:text-left">
-              <h4 className="text-sm font-bold text-[#1F4B43]">
+              <h4 className="text-sm font-bold text-[#009E66]">
                 Questions About Our Terms?
               </h4>
               <p className="text-xs text-[#5E6E62]">
@@ -349,7 +344,7 @@ export const TermsOfServicePage: React.FC = () => {
               href="mailto:terms@pawfectly.com"
               className="px-5 py-2.5 rounded-xl bg-[#009E66] text-white text-xs font-bold hover:bg-[#008756] transition-colors shrink-0 flex items-center gap-1.5 shadow-sm"
             >
-              <Mail className="w-3.5 h-3.5 text-[#E3A23A]" />
+              <Mail className="w-3.5 h-3.5 text-[#EF7C3C]" />
               Contact Legal Desk
             </a>
           </div>

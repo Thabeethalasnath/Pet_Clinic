@@ -63,8 +63,8 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({ product, isOpen, o
         >
           {/* Header Bar */}
           <div className="bg-[#FAF6EE] px-6 py-4 border-b border-[#EDE7D9] flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[#1F4B43]">
-              <div className="w-8 h-8 rounded-full bg-[#E6F9EC] flex items-center justify-center text-[#1F4B43]">
+            <div className="flex items-center gap-2 text-[#009E66]">
+              <div className="w-8 h-8 rounded-full bg-[#E6F9EC] flex items-center justify-center text-[#009E66]">
                 <BellRing className="w-4 h-4" />
               </div>
               <span className="font-black text-sm uppercase tracking-wide">Back In Stock Alert</span>
@@ -84,12 +84,12 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({ product, isOpen, o
                 <img src={primaryImage} alt={product.name} className="w-full h-full object-contain" />
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-[10px] font-black uppercase text-[#1F4B43] tracking-wider">
+                <span className="text-[10px] font-black uppercase text-[#009E66] tracking-wider">
                   {product.category}
                 </span>
                 <h4 className="text-xs sm:text-sm font-bold text-[#16241B] truncate">{product.name}</h4>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs font-black text-[#1F4B43]">{formatCurrency(product.price)}</span>
+                  <span className="text-xs font-black text-[#009E66]">{formatCurrency(product.price)}</span>
                   <span className="px-2 py-0.2 rounded-md bg-red-100 text-red-600 text-[10px] font-bold">
                     Currently Out of Stock
                   </span>
@@ -142,7 +142,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({ product, isOpen, o
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email..."
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6] text-xs sm:text-sm text-[#16241B] placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#1F4B43]"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6] text-xs sm:text-sm text-[#16241B] placeholder-gray-400 focus:outline-hidden focus:ring-2 focus:ring-[#009E66]"
                     required
                   />
                   {error && <p className="text-xs font-semibold text-red-500">{error}</p>}
@@ -155,7 +155,7 @@ export const NotifyMeModal: React.FC<NotifyMeModalProps> = ({ product, isOpen, o
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-xl bg-[#E3A23A] hover:bg-[#D4932B] text-[#16241B] font-extrabold text-xs sm:text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  className="w-full py-3 rounded-xl bg-[#EF7C3C] hover:bg-[#D4932B] text-[#16241B] font-extrabold text-xs sm:text-sm transition-all duration-200 shadow-sm flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <Bell className="w-4 h-4" />
                   <span>Notify Me When Restocked</span>

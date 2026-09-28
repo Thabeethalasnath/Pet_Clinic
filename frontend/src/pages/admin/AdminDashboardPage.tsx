@@ -166,7 +166,7 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
           <button
             onClick={() => setAnnouncementModalOpen(true)}
-            className="px-4 py-2.5 bg-[#3FA65C] hover:bg-[#287A41] text-white font-bold rounded-xl text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-[#3FA65C] hover:bg-[#009E66] text-white font-bold rounded-xl text-xs shadow-xs transition-all flex items-center gap-2 cursor-pointer"
           >
             <Megaphone className="w-4 h-4" />
             <span>Send Announcement</span>
@@ -419,7 +419,7 @@ export const AdminDashboardPage: React.FC = () => {
                 </div>
                 <Link
                   to="/admin/orders"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#009E66] transition-colors"
                 >
                   View All
                 </Link>
@@ -509,7 +509,7 @@ export const AdminDashboardPage: React.FC = () => {
 
                 <Link
                   to="/admin/products"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#009E66] transition-colors"
                 >
                   Manage
                 </Link>
@@ -597,7 +597,7 @@ export const AdminDashboardPage: React.FC = () => {
 
                 <Link
                   to="/admin/vets"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#009E66] transition-colors"
                 >
                   Manage
                 </Link>
@@ -709,7 +709,7 @@ export const AdminDashboardPage: React.FC = () => {
 
                 <Link
                   to="/admin/appointments"
-                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#287A41] transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3FA65C] hover:text-[#009E66] transition-colors"
                 >
                   View All
                 </Link>
@@ -821,7 +821,7 @@ export const AdminDashboardPage: React.FC = () => {
             <button
               type="submit"
               disabled={announcementSubmitting}
-              className="px-5 py-2.5 bg-[#3FA65C] hover:bg-[#287A41] text-white text-xs font-bold rounded-lg transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#3FA65C] hover:bg-[#009E66] text-white text-xs font-bold rounded-lg transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Megaphone className="w-3.5 h-3.5" />
               <span>{announcementSubmitting ? 'Sending...' : 'Broadcast Announcement'}</span>

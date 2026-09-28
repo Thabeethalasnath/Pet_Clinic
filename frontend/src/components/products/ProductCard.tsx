@@ -1,16 +1,30 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Eye, ShoppingBag, ShieldCheck, Check, Sparkles, Plus, Minus, Trash2 } from 'lucide-react';
-import { useTilt } from '../../hooks/useTilt';
+import {
+  Star,
+  ShoppingBag,
+  ShieldCheck,
+  Plus,
+  Minus,
+  Trash2,
+  Stethoscope,
+  Sparkles,
+  Store,
+  Bell,
+  BellRing,
+} from 'lucide-react';
 import { WishlistHeart } from './WishlistHeart';
+import { NotifyMeModal } from './NotifyMeModal';
 import { formatCurrency, getProductImageUrl } from '../../lib/utils';
 import { springs } from '../../lib/motion';
 import { useCart } from '../../hooks/useCart';
+import { useRestockNotifications } from '../../hooks/useRestockNotifications';
 
 export interface ProductItemData {
   id: number;
   name: string;
   category: string;
+  subcategory?: string;
   description: string;
   price: number;
   stockQuantity: number;
@@ -20,12 +34,11 @@ export interface ProductItemData {
   secondaryImageUrl?: string;
   prescriptionRequired?: boolean;
   brand?: string;
-  originalPrice?: number;
-  isFeatured?: boolean;
-  productType?: string;
   petType?: string;
   species?: string;
-  subcategory?: string;
+  productType?: string;
+  originalPrice?: number;
+  isFeatured?: boolean;
 }
 
 interface ProductCardProps {
@@ -46,392 +59,238 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onQuickView,
   onAddToCart,
   isAddingToCart = false,
-  isAddedSuccess = false,
   quantityInCart: propQuantityInCart,
 }) => {
   const { updateQuantity, removeItem, addToCart: contextAddToCart, items } = useCart();
-  const quantityInCart = propQuantityInCart !== undefined
-    ? propQuantityInCart
-    : items.find((i) => i.productId === product.id)?.quantity || 0;
+  const { isSubscribed } = useRestockNotifications();
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const isProductSubscribed = isSubscribed(product.id);
+  const quantityInCart =
+    propQuantityInCart !== undefined
+      ? propQuantityInCart
+      : items.find((i) => i.productId === product.id)?.quantity || 0;
 
-  const { ref, tilt, isTouchDevice, tiltProps, sheenStyle } = useTilt<HTMLDivElement>({
-    maxTilt: 6,
-    sheen: true,
-  });
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const rating = product.rating || 4.8;
-  const reviewsCount = product.reviewsCount || 24;
-  const isOutOfStock = product.stockQuantity <= 0;
-  const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= 5;
-  const discountPercent = product.originalPrice && product.originalPrice > product.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : null;
+  const rating = product.rating ? Number(product.rating) : null;
+  const reviewsCount = product.reviewsCount || 0;
+  const isOutOfStock = (product.stockQuantity || 0) <= 0;
+  const discountPercent =
+    product.originalPrice && product.originalPrice > product.price
+      ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+      : null;
 
   const primaryImage = getProductImageUrl(product.name, product.imageUrl, product.id);
-  const secondaryImage = product.secondaryImageUrl || primaryImage;
+
+  const handleCardClick = () => {
+    if (onQuickView) {
+      onQuickView(product);
+    }
+  };
 
   return (
     <motion.div
-      ref={ref}
-      {...tiltProps}
-      onMouseEnter={() => {
-        setIsHovered(true);
-        tiltProps.onMouseEnter();
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        tiltProps.onMouseLeave();
-      }}
-      initial={{ opacity: 0, y: 20 }}
+      onClick={handleCardClick}
+      initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
+      viewport={{ once: true, margin: '-30px' }}
       transition={springs.soft}
-      style={{
-        transformStyle: 'preserve-3d',
-        transform:
-          !isTouchDevice && tilt.isHovered
-            ? `perspective(1000px) rotateX(${tilt.rotateX.toFixed(2)}deg) rotateY(${tilt.rotateY.toFixed(2)}deg) translateY(-8px)`
-            : !isTouchDevice
-            ? 'perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)'
-            : undefined,
-      }}
-      className={`group relative flex flex-col justify-between h-full bg-white/95 rounded-[22px] border border-[#16241B]/8 p-4 md:p-5 transition-all duration-300 ${
-        tilt.isHovered
-          ? 'shadow-[0_20px_40px_-12px_rgba(22,36,27,0.13),0_6px_16px_-4px_rgba(22,36,27,0.06)] border-[#009E66]/30'
-          : 'shadow-[0_4px_20px_-2px_rgba(22,36,27,0.05),0_2px_6px_0_rgba(22,36,27,0.03)]'
-      }`}
+      className="group bg-white rounded-2xl border border-[#EDE7D9] shadow-2xs hover:-translate-y-1 hover:shadow-[0_12px_28px_-6px_rgba(31,75,67,0.12)] hover:border-[#009E66]/30 transition-all duration-200 ease-out flex flex-col justify-between overflow-hidden relative cursor-pointer h-full"
     >
-      {/* Dynamic Sheen Highlight */}
-      {sheenStyle && (
-        <div
-          className="absolute inset-0 rounded-[22px] pointer-events-none transition-opacity duration-200 z-30"
-          style={sheenStyle}
-        />
-      )}
-
-      {/* Top Badges & Wishlist Action */}
-      <div className="relative z-20 flex items-center justify-between w-full mb-3 gap-2">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {discountPercent ? (
-            <motion.span
-              animate={{ scale: [1, 1.04, 1] }}
-              transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
-              className="px-2.5 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wide bg-[#EF7C3C] text-white shadow-sm flex items-center gap-1"
-            >
-              <Sparkles className="w-3 h-3" />
-              {discountPercent}% OFF
-            </motion.span>
-          ) : product.prescriptionRequired ? (
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#EF7C3C]/12 text-[#D9692A] border border-[#EF7C3C]/20 flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3" /> Rx Required
-            </span>
-          ) : product.isFeatured ? (
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#009E66]/12 text-[#009E66] border border-[#009E66]/20 flex items-center gap-1">
-              ★ Top Pick
-            </span>
-          ) : (
-            <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#FAF6EE] text-[#16241B]/70 border border-[#16241B]/8">
-              {product.category}
-            </span>
-          )}
-
-          {isLowStock && !isOutOfStock && (
-            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 animate-pulse">
-              Only {product.stockQuantity} left
-            </span>
-          )}
-        </div>
-
-        {/* Wishlist Heart */}
-        <WishlistHeart
-          itemType="PRODUCT"
-          itemId={product.id}
-          isInitiallySaved={isSaved}
-          className="shadow-sm"
-        />
-      </div>
-
-      {/* Hero Image Container with 1.08x Zoom & Dual Image Cross-fade */}
-      <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#FAF6EE] flex items-center justify-center p-3 mb-4 group/image">
-        {/* Shimmer skeleton before image loads */}
-        {!imageLoaded && <div className="absolute inset-0 skeleton-shimmer z-10" />}
-
-        {/* Primary Image */}
-        <motion.img
+      {/* Top Badges, Fixed Aspect Ratio Image & Wishlist Heart */}
+      <div className="relative w-full aspect-[4/3] bg-[#FAF6EE] overflow-hidden flex items-center justify-center p-3">
+        <img
           src={primaryImage}
           alt={product.name}
           loading="lazy"
-          onLoad={() => setImageLoaded(true)}
-          animate={{
-            scale: isHovered ? 1.08 : 1,
-            opacity: isHovered && product.secondaryImageUrl ? 0 : 1,
-          }}
-          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="w-full h-full object-contain filter drop-shadow-sm select-none"
+          className="w-full h-full object-contain filter drop-shadow-xs select-none pointer-events-none"
         />
 
-        {/* Secondary Image Crossfade */}
-        {product.secondaryImageUrl && (
-          <motion.img
-            src={secondaryImage}
-            alt={`${product.name} alternate angle`}
-            loading="lazy"
-            animate={{
-              scale: isHovered ? 1.08 : 1,
-              opacity: isHovered ? 1 : 0,
-            }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 w-full h-full object-contain p-3 filter drop-shadow-sm select-none"
-          />
-        )}
+        {/* Top-Left Status / Category Badges */}
+        <div className="absolute top-2.5 left-2.5 z-10 flex flex-wrap items-center gap-1.5">
+          {discountPercent ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EF7C3C] text-white text-[10px] font-black tracking-wide uppercase shadow-2xs">
+              <Sparkles className="w-2.5 h-2.5" />
+              {discountPercent}% OFF
+            </span>
+          ) : product.prescriptionRequired ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EF7C3C]/12 text-[#EF7C3C] text-[10px] font-black uppercase tracking-wide border border-[#EF7C3C]/20 shadow-2xs">
+              <ShieldCheck className="w-3 h-3" />
+              <span>Rx Required</span>
+            </span>
+          ) : reviewsCount > 0 && rating && rating >= 4.8 ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EBF5FF] text-[#1D4ED8] text-[10px] font-black tracking-wider uppercase border border-[#BFDBFE] shadow-2xs">
+              <Stethoscope className="w-3 h-3 text-[#2563EB]" />
+              <span>Vet Approved</span>
+            </span>
+          ) : null}
+        </div>
 
-        {/* Soft Gradient Overlay & Slide-Up Stagger Action Buttons */}
+        {/* Wishlist Heart Toggle */}
         <div
-          className={`absolute inset-0 bg-gradient-to-t from-[#16241B]/75 via-[#16241B]/20 to-transparent flex items-end justify-center p-3 transition-opacity duration-300 z-20 ${
-            isTouchDevice ? 'opacity-0 pointer-events-none' : isHovered ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
+          className="absolute top-2.5 right-2.5 z-10"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-2 w-full">
-            {/* Quick View Button */}
-            {onQuickView && (
-              <motion.button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onQuickView(product);
-                }}
-                animate={isHovered ? { y: 0, opacity: 1 } : { y: 16, opacity: 0 }}
-                transition={{ duration: 0.28, delay: 0.02, ease: [0.22, 1, 0.36, 1] }}
-                className="flex-1 py-2.5 px-3 rounded-xl glass-surface text-[#16241B] font-bold text-xs flex items-center justify-center gap-1.5 hover:bg-white hover:shadow-md transition-all active:scale-95 cursor-pointer"
-              >
-                <Eye className="w-3.5 h-3.5 text-[#009E66]" />
-                Quick View
-              </motion.button>
-            )}
+          <WishlistHeart
+            itemType="PRODUCT"
+            itemId={product.id}
+            isInitiallySaved={isSaved}
+            className="shadow-2xs"
+          />
+        </div>
 
-            {/* Quick Add / Stepper Button */}
-            {quantityInCart === 0 ? (
-              <motion.button
-                type="button"
-                disabled={isOutOfStock || isAddingToCart}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onAddToCart) onAddToCart(product, e);
-                  else contextAddToCart(product, e);
-                }}
-                animate={isHovered ? { y: 0, opacity: 1 } : { y: 16, opacity: 0 }}
-                transition={{ duration: 0.28, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-                className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer ${
-                  isAddedSuccess
-                    ? 'bg-[#009E66] text-white'
-                    : 'bg-[#16241B] hover:bg-[#009E66] text-white'
-                }`}
-              >
-                {isAddedSuccess ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    Added!
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    Add
-                  </>
-                )}
-              </motion.button>
-            ) : (
-              <motion.div
-                animate={isHovered ? { y: 0, opacity: 1 } : { y: 16, opacity: 0 }}
-                transition={{ duration: 0.28, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-                className="flex-1 h-[38px] px-1.5 rounded-xl bg-[#009E66] text-white flex items-center justify-between shadow-md"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  type="button"
-                  aria-label="Decrease quantity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (quantityInCart <= 1) {
-                      removeItem(product.id);
-                    } else {
-                      updateQuantity(product.id, quantityInCart - 1);
-                    }
-                  }}
-                  className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors active:scale-90 cursor-pointer shrink-0"
-                >
-                  {quantityInCart <= 1 ? (
-                    <Trash2 className="w-3.5 h-3.5" />
-                  ) : (
-                    <Minus className="w-3.5 h-3.5" />
-                  )}
-                </button>
-
-                <span className="font-black text-xs px-1 select-none min-w-[20px] text-center">
-                  {quantityInCart}
-                </span>
-
-                <button
-                  type="button"
-                  aria-label="Increase quantity"
-                  disabled={quantityInCart >= product.stockQuantity}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (quantityInCart < product.stockQuantity) {
-                      updateQuantity(product.id, quantityInCart + 1);
-                    }
-                  }}
-                  className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-40 flex items-center justify-center text-white transition-colors active:scale-90 cursor-pointer shrink-0"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
-            )}
-          </div>
+        {/* Pickup Ready Tag */}
+        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 text-[10px] font-bold text-[#009E66] bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-full border border-[#EDE7D9] shadow-2xs">
+          <Store className="w-3 h-3 text-[#EF7C3C]" />
+          <span>Pickup Ready</span>
         </div>
       </div>
 
-      {/* Product Information */}
-      <div className="flex flex-col flex-1 justify-between">
+      {/* Product Info & Action Footer */}
+      <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
         <div>
-          {/* Rating Stars with 40ms Stagger Reveal on Scroll */}
-          <div className="flex items-center gap-1.5 mb-2">
-            <div className="flex items-center">
-              {[1, 2, 3, 4, 5].map((starIndex) => (
-                <motion.div
-                  key={starIndex}
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{
-                    duration: 0.3,
-                    delay: 0.05 + starIndex * 0.04,
-                    ease: 'easeOut',
-                  }}
-                >
-                  <Star
-                    className={`w-3.5 h-3.5 ${
-                      starIndex <= Math.round(rating)
-                        ? 'fill-[#FFD84D] text-[#FFD84D]'
-                        : 'text-gray-200 fill-gray-100'
-                    }`}
-                  />
-                </motion.div>
-              ))}
-            </div>
-            <span className="text-[11px] font-bold text-[#16241B]/80">{rating.toFixed(1)}</span>
-            <span className="text-[11px] text-[#16241B]/40">({reviewsCount})</span>
+          {/* Brand & Rating Row */}
+          <div className="flex items-center justify-between text-[11px] mb-1 gap-2">
+            <span className="text-[#009E66] uppercase tracking-wider font-black truncate">
+              {product.brand || product.category}
+            </span>
+
+            {reviewsCount > 0 && rating !== null ? (
+              <div className="flex items-center gap-1 text-[#16241B] shrink-0">
+                <Star className="w-3.5 h-3.5 fill-[#EF7C3C] text-[#EF7C3C]" />
+                <span className="font-black text-xs">{rating.toFixed(1)}</span>
+                <span className="text-[#88998C] text-[10px]">({reviewsCount})</span>
+              </div>
+            ) : (
+              <span className="text-[10px] text-[#88998C] font-medium flex items-center gap-1">
+                <Star className="w-3 h-3 text-gray-300" />
+                <span>No reviews</span>
+              </span>
+            )}
           </div>
 
-          {/* Product Title with Fixed 2-Line Box Height */}
-          <h3
-            className="font-bold text-[#16241B] text-sm md:text-base leading-snug line-clamp-2 min-h-[2.6rem] mb-1.5 group-hover:text-[#009E66] transition-colors duration-200"
+          {/* Product Title */}
+          <h4
+            className="text-sm font-medium text-[#16241B] line-clamp-2 leading-snug group-hover:text-[#009E66] transition-colors min-h-[2.5rem]"
             title={product.name}
           >
             {product.name}
-          </h3>
+          </h4>
 
-          {/* Short Description with Fixed 2-Line Box Height */}
-          <p className="text-xs text-[#16241B]/60 line-clamp-2 min-h-[2rem] mb-2 leading-relaxed">
-            {product.description}
+          {/* Subtitle / Category Description */}
+          <p className="text-xs font-normal text-[#556658] mt-1 line-clamp-1">
+            {product.subcategory || product.category || product.description || 'Pet Essential Care'}
           </p>
         </div>
 
-        {/* Price & Action Row */}
-        <div className="mt-auto pt-3 border-t border-[#16241B]/8 flex items-center justify-between gap-2">
-          <div className="flex flex-col">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-base md:text-lg font-black text-[#16241B]">
-                {formatCurrency(product.price)}
-              </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-xs text-[#16241B]/40 line-through">
-                  {formatCurrency(product.originalPrice)}
-                </span>
-              )}
-            </div>
-            <span className="text-[10px] font-medium text-[#16241B]/50">
-              {isOutOfStock ? 'Sold Out' : 'Free In-Store Pickup'}
+        {/* Bottom Pricing & In-Store Cart Button */}
+        <div
+          className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div>
+            <span className="text-base sm:text-lg font-black text-[#009E66]">
+              {formatCurrency(product.price)}
+            </span>
+            <span className="block text-[10px] font-semibold text-[#88998C]">
+              In-Store Pickup
             </span>
           </div>
 
-          {/* Add / Stepper CTA on Price Row */}
-          <div>
-            {isOutOfStock ? null : quantityInCart > 0 ? (
-              <div
-                className="flex items-center bg-[#009E66] text-white rounded-xl p-1 shadow-xs"
-                onClick={(e) => e.stopPropagation()}
+          {/* Cart Add / Stepper / Out of stock */}
+          {isOutOfStock ? (
+            isProductSubscribed ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNotifyModal(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#E6F9EC] hover:bg-[#d4f2dc] border border-[#CBDAC6] text-[#009E66] font-bold text-xs flex items-center gap-1 cursor-pointer shadow-2xs transition-colors"
+                title="Click to manage restock notification"
               >
-                <button
-                  type="button"
-                  aria-label="Decrease quantity"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (quantityInCart <= 1) {
-                      removeItem(product.id);
-                    } else {
-                      updateQuantity(product.id, quantityInCart - 1);
-                    }
-                  }}
-                  className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors active:scale-90 cursor-pointer"
-                >
-                  {quantityInCart <= 1 ? (
-                    <Trash2 className="w-3 h-3" />
-                  ) : (
-                    <Minus className="w-3 h-3" />
-                  )}
-                </button>
-                <span className="font-black text-xs px-2 select-none min-w-[20px] text-center">
-                  {quantityInCart}
-                </span>
-                <button
-                  type="button"
-                  aria-label="Increase quantity"
-                  disabled={quantityInCart >= product.stockQuantity}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (quantityInCart < product.stockQuantity) {
-                      updateQuantity(product.id, quantityInCart + 1);
-                    }
-                  }}
-                  className="w-6 h-6 rounded-lg bg-white/20 hover:bg-white/30 disabled:opacity-40 flex items-center justify-center text-white transition-colors active:scale-90 cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              </div>
+                <BellRing className="w-3.5 h-3.5 text-[#009E66]" />
+                <span>Notified</span>
+              </button>
             ) : (
               <button
                 type="button"
-                disabled={isOutOfStock || isAddingToCart}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (onAddToCart) onAddToCart(product, e);
-                  else contextAddToCart(product, e);
+                  setShowNotifyModal(true);
                 }}
-                className={`py-1.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer ${
-                  isAddedSuccess
-                    ? 'bg-[#009E66] text-white'
-                    : 'bg-[#16241B] hover:bg-[#009E66] text-white'
-                }`}
-                aria-label={`Add ${product.name} to cart`}
+                className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-1"
+                title="Get notified when this item is back in stock"
               >
-                {isAddedSuccess ? (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Added!</span>
-                  </>
+                <Bell className="w-3.5 h-3.5 text-[#EF7C3C]" />
+                <span>Notify</span>
+              </button>
+            )
+          ) : quantityInCart > 0 ? (
+            <div
+              className="flex items-center bg-[#009E66] text-white rounded-xl p-0.5 shadow-xs"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Decrease quantity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (quantityInCart <= 1) {
+                    removeItem(product.id);
+                  } else {
+                    updateQuantity(product.id, quantityInCart - 1);
+                  }
+                }}
+                className="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {quantityInCart <= 1 ? (
+                  <Trash2 className="w-3.5 h-3.5" />
                 ) : (
-                  <>
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add</span>
-                  </>
+                  <Minus className="w-3.5 h-3.5" />
                 )}
               </button>
-            )}
-          </div>
+              <span className="w-7 text-center font-black text-xs select-none">
+                {quantityInCart}
+              </span>
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                disabled={quantityInCart >= product.stockQuantity}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (quantityInCart < product.stockQuantity) {
+                    updateQuantity(product.id, quantityInCart + 1);
+                  }
+                }}
+                className="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={isAddingToCart}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onAddToCart) onAddToCart(product, e);
+                else contextAddToCart(product, e);
+              }}
+              className="group/addbtn h-9 px-3.5 rounded-xl text-xs font-bold bg-[#009E66] hover:bg-[#008756] text-white border-none flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all whitespace-nowrap"
+              aria-label={`Add ${product.name} to cart`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-white group-hover/addbtn:text-[#EF7C3C] transition-colors duration-200" />
+              <span>Add</span>
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Restock Notification Modal */}
+      <NotifyMeModal
+        product={product}
+        isOpen={showNotifyModal}
+        onClose={() => setShowNotifyModal(false)}
+      />
     </motion.div>
   );
 };

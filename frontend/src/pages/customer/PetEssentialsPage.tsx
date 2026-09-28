@@ -1,55 +1,26 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { StickyCartBar } from '../../components/layout/StickyCartBar';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { Button } from '../../components/ui/Button';
-import { HeartToggle } from '../../components/common/HeartToggle';
-import { useAuth } from '../../features/auth/AuthContext';
 import { useWishlistIds } from '../../hooks/useWishlistIds';
 import { apiClient } from '../../lib/axios';
-import { getProductImageUrl, formatCurrency } from '../../lib/utils';
 import {
   type PetType,
-  type SmallPetSpecies,
 } from '../../data/petEssentialsTaxonomy';
 import {
   ChevronDown,
-  Star,
-  Plus,
-  Minus,
-  ShoppingBag,
-  Store,
   SlidersHorizontal,
-  Stethoscope,
 } from 'lucide-react';
+import { ProductCard, type ProductItemData } from '../../components/products/ProductCard';
+import { ProductDetailModal } from '../../components/products/ProductDetailModal';
 
-interface ProductItem {
-  id: number;
-  name: string;
-  category: string;
-  subcategory?: string;
-  brand?: string;
-  description: string;
-  price: number;
-  stockQuantity: number;
-  rating?: number;
-  reviewsCount?: number;
-  imageUrl?: string;
-  petType?: string;
-  species?: string;
-  productType?: string;
-}
+import { FALLBACK_PRODUCTS } from '../../data/mockProducts';
 
-interface CartItemMapValue {
-  id: number;
-  quantity: number;
-}
-
-// Circular subcategory icon/image map for visual richness
+// Subcategory Circular Icons map
 const SUBCATEGORY_ICON_MAP: Record<string, string> = {
   All: 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=120&auto=format&fit=crop&q=80',
   'Dry Food': 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?w=120&auto=format&fit=crop&q=80',
@@ -72,23 +43,18 @@ const SUBCATEGORY_ICON_MAP: Record<string, string> = {
 
 export const PetEssentialsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
   const { isSaved } = useWishlistIds();
 
-  // URL state with local storage fallback
-  const initialPetType =
-    (searchParams.get('petType')?.toUpperCase() as PetType) ||
-    (localStorage.getItem('pawfectly_pet_essentials_pet_type') as PetType) ||
-    'DOG';
+  // Multi-select Pet Types from URL or default
+  const initialPetTypes = useMemo<PetType[]>(() => {
+    const raw = searchParams.get('petType');
+    if (raw) {
+      return raw.split(',').map((p) => p.trim().toUpperCase() as PetType);
+    }
+    return ['DOG'];
+  }, [searchParams]);
 
-  const initialSpecies =
-    (searchParams.get('species')?.toUpperCase() as SmallPetSpecies) ||
-    (localStorage.getItem('pawfectly_pet_essentials_species') as SmallPetSpecies) ||
-    'HAMSTER';
-
-  const [selectedPetType, setSelectedPetType] = useState<PetType>(initialPetType);
-  const [selectedSpecies, setSelectedSpecies] = useState<SmallPetSpecies>(initialSpecies);
+  const [selectedPetTypes, setSelectedPetTypes] = useState<PetType[]>(initialPetTypes);
   const [selectedCategory, setSelectedCategory] = useState<string>(searchParams.get('category') || 'All');
   const [selectedSubcategory, setSelectedSubcategory] = useState<string>(searchParams.get('subcategory') || 'All');
   const [selectedBrands, setSelectedBrands] = useState<string[]>(
@@ -98,10 +64,11 @@ export const PetEssentialsPage: React.FC = () => {
   );
   const [searchQuery, setSearchQuery] = useState<string>(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState<string>(searchParams.get('sort') || 'popularity');
-  const [showInStockOnly, setShowInStockOnly] = useState<boolean>(false);
-  const [vetApprovedOnly, setVetApprovedOnly] = useState<boolean>(false);
   const [ageFilter, setAgeFilter] = useState<string>('All');
-  const [maxPrice, setMaxPrice] = useState<number>(2000);
+  const [maxPrice, setMaxPrice] = useState<number>(5000);
+
+  // Detail Modal State
+  const [selectedProductDetail, setSelectedProductDetail] = useState<ProductItemData | null>(null);
 
   // Left Sidebar Toggle
   const [showFilters, setShowFilters] = useState<boolean>(true);
@@ -111,46 +78,18 @@ export const PetEssentialsPage: React.FC = () => {
   const [petTypeAccordionOpen, setPetTypeAccordionOpen] = useState<boolean>(true);
   const [brandAccordionOpen, setBrandAccordionOpen] = useState<boolean>(true);
 
-  // Sync state when URL params change
-  useEffect(() => {
-    const urlPet = searchParams.get('petType')?.toUpperCase() as PetType;
-    if (urlPet && (urlPet === 'DOG' || urlPet === 'CAT' || urlPet === 'SMALL_PET')) {
-      setSelectedPetType(urlPet);
-    }
-    const urlSpecies = searchParams.get('species')?.toUpperCase() as SmallPetSpecies;
-    if (urlSpecies && ['HAMSTER', 'BIRD', 'RABBIT', 'FISH', 'REPTILE'].includes(urlSpecies)) {
-      setSelectedSpecies(urlSpecies);
-    }
-    setSelectedCategory(searchParams.get('category') || 'All');
-    setSelectedSubcategory(searchParams.get('subcategory') || 'All');
-    const brandParam = searchParams.get('brand');
-    setSelectedBrands(brandParam && brandParam !== 'All' ? brandParam.split(',') : []);
-    setSearchQuery(searchParams.get('search') || '');
-    setSortBy(searchParams.get('sort') || 'popularity');
-  }, [searchParams]);
-
-  // Products, Catalog & Cart State
-  const [allProducts, setAllProducts] = useState<ProductItem[]>([]);
-  const [products, setProducts] = useState<ProductItem[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Products State
+  const [allProducts, setAllProducts] = useState<ProductItemData[]>(() =>
+    FALLBACK_PRODUCTS.filter((p) => p.productType === 'ESSENTIAL')
+  );
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [cartItems, setCartItems] = useState<Record<number, CartItemMapValue>>({});
-  const [updatingCart, setUpdatingCart] = useState<Record<number, boolean>>({});
-
-  // Save selection to localStorage
-  useEffect(() => {
-    localStorage.setItem('pawfectly_pet_essentials_pet_type', selectedPetType);
-    if (selectedPetType === 'SMALL_PET') {
-      localStorage.setItem('pawfectly_pet_essentials_species', selectedSpecies);
-    }
-  }, [selectedPetType, selectedSpecies]);
 
   // Sync URL search params
   const updateUrlParams = useCallback(() => {
     const params = new URLSearchParams();
-    params.set('petType', selectedPetType);
-    if (selectedPetType === 'SMALL_PET') {
-      params.set('species', selectedSpecies);
+    if (selectedPetTypes.length > 0) {
+      params.set('petType', selectedPetTypes.join(','));
     }
     if (selectedCategory && selectedCategory !== 'All') {
       params.set('category', selectedCategory);
@@ -167,180 +106,52 @@ export const PetEssentialsPage: React.FC = () => {
     if (sortBy && sortBy !== 'popularity') {
       params.set('sort', sortBy);
     }
-    setSearchParams(params, { replace: true });
-  }, [selectedPetType, selectedSpecies, selectedCategory, selectedSubcategory, selectedBrands, searchQuery, sortBy, setSearchParams]);
+    // Only update if search params actually changed to prevent render loops
+    if (params.toString() !== searchParams.toString()) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [selectedPetTypes, selectedCategory, selectedSubcategory, selectedBrands, searchQuery, sortBy, searchParams, setSearchParams]);
 
   useEffect(() => {
     updateUrlParams();
   }, [updateUrlParams]);
 
-  // Fetch Full Essentials Catalog for Dynamic Filter Counts
-  const fetchAllCatalog = useCallback(async () => {
-    try {
-      const res = await apiClient.get<ProductItem[]>('/pet-essentials/products');
-      setAllProducts(res.data || []);
-    } catch {
-      setAllProducts([]);
-    }
-  }, []);
-
-  // Fetch Filtered Products from API
+  // Fetch Full Essentials Catalog from Backend
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const params: Record<string, any> = {
-        petType: selectedPetType,
-      };
-      if (selectedPetType === 'SMALL_PET') {
-        params.species = selectedSpecies;
+      const res = await apiClient.get<ProductItemData[]>('/pet-essentials/products');
+      if (res.data && res.data.length > 0) {
+        setAllProducts(res.data);
+      } else {
+        setAllProducts(FALLBACK_PRODUCTS.filter((p) => p.productType === 'ESSENTIAL'));
       }
-      if (selectedCategory !== 'All') {
-        params.category = selectedCategory;
-      }
-      if (selectedSubcategory !== 'All') {
-        params.subcategory = selectedSubcategory;
-      }
-      if (selectedBrands.length === 1) {
-        params.brand = selectedBrands[0];
-      }
-      if (searchQuery.trim()) {
-        params.search = searchQuery.trim();
-      }
-      if (sortBy !== 'popularity') {
-        params.sort = sortBy;
-      }
-
-      const res = await apiClient.get<ProductItem[]>('/pet-essentials/products', { params });
-      setProducts(res.data || []);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load pet essentials. Please check your connection.');
-      setProducts([]);
+    } catch {
+      // Gracefully fallback to rich local essentials catalog
+      setAllProducts(FALLBACK_PRODUCTS.filter((p) => p.productType === 'ESSENTIAL'));
     } finally {
       setLoading(false);
     }
-  }, [selectedPetType, selectedSpecies, selectedCategory, selectedSubcategory, selectedBrands, searchQuery, sortBy]);
-
-  // Fetch Cart Items
-  const fetchCart = useCallback(async () => {
-    if (!isAuthenticated) {
-      setCartItems({});
-      return;
-    }
-    try {
-      const res = await apiClient.get<{ id: number; productId: number; quantity: number }[]>('/customer/cart');
-      const map: Record<number, CartItemMapValue> = {};
-      (res.data || []).forEach((item) => {
-        map[item.productId] = { id: item.id, quantity: item.quantity };
-      });
-      setCartItems(map);
-    } catch {
-      setCartItems({});
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    fetchAllCatalog();
-  }, [fetchAllCatalog]);
+  }, []);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
 
-  useEffect(() => {
-    fetchCart();
-    const handleCartUpdate = () => fetchCart();
-    window.addEventListener('cart-updated', handleCartUpdate);
-    return () => window.removeEventListener('cart-updated', handleCartUpdate);
-  }, [fetchCart]);
-
-  // Cart Operations
-  const handleAddToCart = async (product: ProductItem) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
-    try {
-      const res = await apiClient.post('/customer/cart', {
-        productId: product.id,
-        quantity: 1,
-      });
-      if (res.data) {
-        setCartItems((prev) => ({
-          ...prev,
-          [product.id]: { id: res.data.id, quantity: res.data.quantity || 1 },
-        }));
-      }
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // handled
-    } finally {
-      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const handleIncreaseQuantity = async (product: ProductItem, cartItem: CartItemMapValue) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    if (cartItem.quantity >= product.stockQuantity) return;
-    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
-    try {
-      const newQty = cartItem.quantity + 1;
-      const res = await apiClient.put(`/customer/cart/${cartItem.id}?quantity=${newQty}`);
-      if (res.data) {
-        setCartItems((prev) => ({
-          ...prev,
-          [product.id]: { ...cartItem, quantity: newQty },
-        }));
-      }
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // handled
-    } finally {
-      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const handleDecreaseQuantity = async (product: ProductItem, cartItem: CartItemMapValue) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-    setUpdatingCart((prev) => ({ ...prev, [product.id]: true }));
-    try {
-      const newQty = cartItem.quantity - 1;
-      if (newQty <= 0) {
-        await apiClient.delete(`/customer/cart/${cartItem.id}`);
-        setCartItems((prev) => {
-          const next = { ...prev };
-          delete next[product.id];
-          return next;
-        });
+  // Pet Type Multi-select toggle (OR logic within group)
+  const handleTogglePetType = (pet: PetType) => {
+    setSelectedPetTypes((prev) => {
+      if (prev.includes(pet)) {
+        return prev.filter((p) => p !== pet);
       } else {
-        await apiClient.put(`/customer/cart/${cartItem.id}?quantity=${newQty}`);
-        setCartItems((prev) => ({
-          ...prev,
-          [product.id]: { ...cartItem, quantity: newQty },
-        }));
+        return [...prev, pet];
       }
-      window.dispatchEvent(new Event('cart-updated'));
-    } catch {
-      // handled
-    } finally {
-      setUpdatingCart((prev) => ({ ...prev, [product.id]: false }));
-    }
-  };
-
-  const handlePetTypeChange = (pet: PetType) => {
-    setSelectedPetType(pet);
-    setSelectedCategory('All');
+    });
     setSelectedSubcategory('All');
-    setSelectedBrands([]);
   };
 
+  // Brand Multi-select toggle (OR logic within group)
   const handleToggleBrand = (brand: string) => {
     setSelectedBrands((prev) => {
       if (prev.includes(brand)) {
@@ -352,20 +163,19 @@ export const PetEssentialsPage: React.FC = () => {
   };
 
   const clearFilters = () => {
+    setSelectedPetTypes([]);
     setSelectedCategory('All');
     setSelectedSubcategory('All');
     setSelectedBrands([]);
     setSearchQuery('');
     setSortBy('popularity');
-    setShowInStockOnly(false);
-    setVetApprovedOnly(false);
     setAgeFilter('All');
-    setMaxPrice(2000);
+    setMaxPrice(5000);
   };
 
-  // Dynamic Pet Counts across catalog
+  // Dynamic Pet Type Counts across catalog
   const petTypeCounts = useMemo(() => {
-    const counts = { DOG: 0, CAT: 0, SMALL_PET: 0 };
+    const counts: Record<PetType, number> = { DOG: 0, CAT: 0, SMALL_PET: 0 };
     allProducts.forEach((p) => {
       const type = (p.petType || 'DOG').toUpperCase() as PetType;
       if (counts[type] !== undefined) {
@@ -375,129 +185,156 @@ export const PetEssentialsPage: React.FC = () => {
     return counts;
   }, [allProducts]);
 
-  // Dynamic Brand List & Counts for currently active pet products
+  // Dynamic Brand List & Counts based on active pet types
   const brandListWithCounts = useMemo(() => {
     const brandMap: Record<string, number> = {};
     allProducts.forEach((p) => {
       if (!p.brand) return;
-      if (p.petType === selectedPetType || !p.petType) {
+      const petMatch =
+        selectedPetTypes.length === 0 ||
+        selectedPetTypes.includes((p.petType || 'DOG').toUpperCase() as PetType);
+      if (petMatch) {
         brandMap[p.brand] = (brandMap[p.brand] || 0) + 1;
       }
     });
     return Object.entries(brandMap)
       .map(([brand, count]) => ({ brand, count }))
       .sort((a, b) => b.count - a.count);
-  }, [allProducts, selectedPetType]);
+  }, [allProducts, selectedPetTypes]);
 
-  // Horizontal Circular Subcategories for Selected Pet / Category
+  // Horizontal Circular Subcategories for Selected Pet Types
   const subcategoryPills = useMemo(() => {
     const list: { name: string; iconUrl: string }[] = [
       { name: 'All', iconUrl: SUBCATEGORY_ICON_MAP['All'] },
     ];
 
-    if (selectedPetType === 'DOG') {
-      const dogSubs = [
-        'Dry Food',
-        'Wet Food',
-        'Chew Toys',
-        'Eye Drops',
-        'Ear Cleanser',
-        'Ear Drops',
-        'Treats',
-        'Bowls & Feeders',
-        'Grooming',
-      ];
-      dogSubs.forEach((sub) => {
-        list.push({
-          name: sub,
-          iconUrl: SUBCATEGORY_ICON_MAP[sub] || SUBCATEGORY_ICON_MAP['Dry Food'],
-        });
-      });
-    } else if (selectedPetType === 'CAT') {
-      const catSubs = [
-        'Dry Food',
-        'Wet Food',
-        'Cat Litter',
-        'Eye Drops',
-        'Ear Cleanser',
-        'Treats',
-        'Bowls & Feeders',
-        'Grooming',
-      ];
-      catSubs.forEach((sub) => {
-        list.push({
-          name: sub,
-          iconUrl: SUBCATEGORY_ICON_MAP[sub] || SUBCATEGORY_ICON_MAP['Dry Food'],
-        });
-      });
-    } else {
-      const smallSubs = ['Fish Food', 'Bird Food', 'Hamster Food', 'Rabbit Food', 'Grooming'];
-      smallSubs.forEach((sub) => {
-        list.push({
-          name: sub,
-          iconUrl: SUBCATEGORY_ICON_MAP[sub] || SUBCATEGORY_ICON_MAP['All'],
-        });
+    const hasDogs = selectedPetTypes.length === 0 || selectedPetTypes.includes('DOG');
+    const hasCats = selectedPetTypes.length === 0 || selectedPetTypes.includes('CAT');
+    const hasSmall = selectedPetTypes.length === 0 || selectedPetTypes.includes('SMALL_PET');
+
+    const added = new Set<string>();
+
+    if (hasDogs) {
+      ['Dry Food', 'Wet Food', 'Chew Toys', 'Treats', 'Bowls & Feeders', 'Grooming', 'Walk & Travel', 'Beds & Housing'].forEach((sub) => {
+        if (!added.has(sub)) {
+          added.add(sub);
+          list.push({
+            name: sub,
+            iconUrl: SUBCATEGORY_ICON_MAP[sub] || SUBCATEGORY_ICON_MAP['Dry Food'],
+          });
+        }
       });
     }
+
+    if (hasCats) {
+      ['Cat Litter', 'Wet Food', 'Dry Food', 'Treats', 'Grooming'].forEach((sub) => {
+        if (!added.has(sub)) {
+          added.add(sub);
+          list.push({
+            name: sub,
+            iconUrl: SUBCATEGORY_ICON_MAP[sub] || SUBCATEGORY_ICON_MAP['Cat Litter'],
+          });
+        }
+      });
+    }
+
+    if (hasSmall) {
+      ['Fish Food', 'Bird Food', 'Hamster Food', 'Rabbit Food'].forEach((sub) => {
+        if (!added.has(sub)) {
+          added.add(sub);
+          list.push({
+            name: sub,
+            iconUrl: SUBCATEGORY_ICON_MAP[sub] || SUBCATEGORY_ICON_MAP['All'],
+          });
+        }
+      });
+    }
+
     return list;
-  }, [selectedPetType]);
+  }, [selectedPetTypes]);
 
-  // Filtered Products for client-side attributes (Price slider, in-stock, multiple brand selection, vet approved, age)
+  // Combined AND/OR Multi-Filter Logic
   const displayedProducts = useMemo(() => {
-    return products.filter((p) => {
-      // Price slider
-      if (p.price > maxPrice) return false;
-
-      // In stock
-      if (showInStockOnly && (p.stockQuantity || 0) <= 0) return false;
-
-      // Multiple brands
-      if (selectedBrands.length > 0 && (!p.brand || !selectedBrands.includes(p.brand))) {
-        return false;
-      }
-
-      // Age filter
-      if (ageFilter !== 'All') {
-        const text = `${p.name} ${p.description || ''} ${p.subcategory || ''}`.toLowerCase();
-        if (ageFilter === 'Puppy / Kitten' && !text.includes('puppy') && !text.includes('kitten')) {
-          return false;
+    return allProducts
+      .filter((p) => {
+        // 1. Pet Type Filter (OR logic within group)
+        if (selectedPetTypes.length > 0) {
+          const type = (p.petType || 'DOG').toUpperCase() as PetType;
+          if (!selectedPetTypes.includes(type)) return false;
         }
-        if (ageFilter === 'Adult' && !text.includes('adult') && (text.includes('puppy') || text.includes('kitten'))) {
-          return false;
-        }
-        if (ageFilter === 'Senior' && !text.includes('senior')) {
-          return false;
-        }
-      }
 
-      // Vet Approved Filter (non-prescriptive wellness / high rating)
-      if (vetApprovedOnly && (p.rating || 0) < 4.5) {
-        return false;
-      }
+        // 2. Subcategory Filter
+        if (selectedSubcategory !== 'All') {
+          const pSub = (p.subcategory || '').toLowerCase();
+          const pCat = (p.category || '').toLowerCase();
+          const target = selectedSubcategory.toLowerCase();
+          if (!pSub.includes(target) && !pCat.includes(target) && !target.includes(pSub)) {
+            return false;
+          }
+        }
 
-      return true;
-    });
-  }, [products, maxPrice, showInStockOnly, selectedBrands, ageFilter, vetApprovedOnly]);
+        // 3. Brand Filter (OR logic within group)
+        if (selectedBrands.length > 0) {
+          if (!p.brand || !selectedBrands.includes(p.brand)) {
+            return false;
+          }
+        }
+
+        // 4. Price Filter
+        if (p.price > maxPrice) return false;
+
+        // 5. Age Filter
+        if (ageFilter !== 'All') {
+          const text = `${p.name} ${p.description || ''} ${p.subcategory || ''}`.toLowerCase();
+          if (ageFilter === 'Puppy / Kitten' && !text.includes('puppy') && !text.includes('kitten')) {
+            return false;
+          }
+          if (ageFilter === 'Adult' && !text.includes('adult') && (text.includes('puppy') || text.includes('kitten'))) {
+            return false;
+          }
+          if (ageFilter === 'Senior' && !text.includes('senior')) {
+            return false;
+          }
+        }
+
+        // 6. Search Query Filter
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const searchable = `${p.name} ${p.brand || ''} ${p.category || ''} ${p.subcategory || ''} ${p.description || ''}`.toLowerCase();
+          if (!searchable.includes(q)) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'price-low-to-high') return a.price - b.price;
+        if (sortBy === 'price-high-to-low') return b.price - a.price;
+        if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+        if (sortBy === 'newest') return b.id - a.id;
+        return (b.reviewsCount || 0) - (a.reviewsCount || 0);
+      });
+  }, [allProducts, selectedPetTypes, selectedSubcategory, selectedBrands, maxPrice, ageFilter, searchQuery, sortBy]);
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col selection:bg-[#E3A23A]/30">
-      {/* 1. Universal Navbar with Pet Essentials Mega Menu */}
+    <div className="min-h-screen bg-[#F6F7F2] text-[#16241B] font-sans flex flex-col selection:bg-[#EF7C3C]/30">
+      {/* 1. Universal Navbar */}
       <Navbar activePage="pet-essentials" />
 
-      <main className="flex-grow pb-24">
+      <main className="flex-grow pb-14">
         {/* ===================================================================
-            2. TOP FILTER & SORT BAR (Matching Reference Screenshot)
+            2. TOP FILTER & SORT BAR (Non-Sticky, Natural Scroll)
         =================================================================== */}
-        <div className="bg-white border-b border-[#EDE7D9] sticky top-20 z-30 shadow-2xs">
+        <div className="bg-white border-b border-[#EDE7D9] shadow-2xs">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-3">
-            {/* Left Action Chips: FILTERS, Hide X, Age, Vet Approved */}
+            {/* Left Action Chips: FILTERS, Age */}
             <div className="flex items-center flex-wrap gap-2.5">
-              {/* FILTERS Button with Sliders Icon */}
+              {/* FILTERS Toggle Button */}
               <button
+                type="button"
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FAF6EE] border border-[#E5DFCE] text-xs font-black text-[#16241B] hover:bg-[#F3EDE0] transition-colors cursor-pointer shadow-2xs"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#FAF6EE] border border-[#E5DFCE] text-xs font-black text-[#009E66] hover:bg-[#F0EAE1] transition-colors cursor-pointer shadow-2xs"
               >
-                <SlidersHorizontal className="w-3.5 h-3.5 text-[#1F4B43]" />
+                <SlidersHorizontal className="w-3.5 h-3.5 text-[#009E66]" />
                 <span className="tracking-wide">FILTERS</span>
               </button>
 
@@ -506,7 +343,7 @@ export const PetEssentialsPage: React.FC = () => {
                 <select
                   value={ageFilter}
                   onChange={(e) => setAgeFilter(e.target.value)}
-                  className="appearance-none pl-3 pr-7 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#1F4B43] cursor-pointer shadow-2xs"
+                  className="appearance-none pl-3 pr-7 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#009E66] cursor-pointer shadow-2xs"
                 >
                   <option value="All">Age: All</option>
                   <option value="Puppy / Kitten">Puppy / Kitten</option>
@@ -515,20 +352,6 @@ export const PetEssentialsPage: React.FC = () => {
                 </select>
                 <ChevronDown className="w-3 h-3 text-[#88998C] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
-
-              {/* Vet Approved Toggle Pill */}
-              <button
-                type="button"
-                onClick={() => setVetApprovedOnly(!vetApprovedOnly)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border shadow-2xs ${
-                  vetApprovedOnly
-                    ? 'bg-[#EBF5FF] border-[#93C5FD] text-[#1D4ED8] ring-2 ring-[#BFDBFE]'
-                    : 'bg-white border-[#E5DFCE] text-[#334437] hover:bg-[#FAF6EE]'
-                }`}
-              >
-                <Stethoscope className="w-3.5 h-3.5 text-[#2563EB]" />
-                <span>Vet Approved</span>
-              </button>
             </div>
 
             {/* Right: Sort By Dropdown */}
@@ -538,7 +361,7 @@ export const PetEssentialsPage: React.FC = () => {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none pl-3.5 pr-8 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#1F4B43] cursor-pointer shadow-2xs"
+                  className="appearance-none pl-3.5 pr-8 py-2 rounded-xl bg-white border border-[#E5DFCE] text-xs font-bold text-[#16241B] focus:outline-none focus:ring-1 focus:ring-[#009E66] cursor-pointer shadow-2xs"
                 >
                   <option value="popularity">Popularity</option>
                   <option value="price-low-to-high">Price: Low to High</option>
@@ -546,7 +369,7 @@ export const PetEssentialsPage: React.FC = () => {
                   <option value="rating">Highest Rated</option>
                   <option value="newest">New Arrivals</option>
                 </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#88998C] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-3 h-3 text-[#88998C] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -555,18 +378,19 @@ export const PetEssentialsPage: React.FC = () => {
         {/* ===================================================================
             3. MAIN CONTENT WITH LEFT FILTER SIDEBAR & CATALOG GRID
         =================================================================== */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-5">
           <div className="grid grid-cols-12 gap-6 lg:gap-8 items-start">
             {/* ===============================================================
                 LEFT SIDEBAR FILTERS (Price, Pet Type, Brand)
             =============================================================== */}
             {showFilters && (
-              <aside className="col-span-12 lg:col-span-3 bg-white rounded-2xl border border-[#EDE7D9] p-5 shadow-2xs space-y-6 animate-in fade-in slide-in-from-left-2 duration-200">
+              <aside className="col-span-12 lg:col-span-3 bg-white rounded-2xl border border-[#EDE7D9] p-5 shadow-2xs space-y-6">
                 {/* 1. Price Accordion & Slider */}
                 <div className="border-b border-[#F0EAE1] pb-5">
                   <button
+                    type="button"
                     onClick={() => setPriceAccordionOpen(!priceAccordionOpen)}
-                    className="w-full flex items-center justify-between text-sm font-black text-[#16241B] cursor-pointer"
+                    className="w-full flex items-center justify-between text-sm font-black text-[#009E66] cursor-pointer"
                   >
                     <span>Price</span>
                     <ChevronDown
@@ -578,32 +402,32 @@ export const PetEssentialsPage: React.FC = () => {
 
                   {priceAccordionOpen && (
                     <div className="mt-4 space-y-3">
-                      {/* Price Range Slider */}
                       <input
                         type="range"
                         min="0"
-                        max="2500"
+                        max="5000"
                         step="50"
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(Number(e.target.value))}
-                        className="w-full h-2 bg-[#E5DFCE] rounded-lg appearance-none cursor-pointer accent-[#1F4B43]"
+                        className="w-full h-2 bg-[#CBDAC6] rounded-lg appearance-none cursor-pointer accent-[#009E66]"
                       />
                       <div className="flex items-center justify-between text-xs font-bold text-[#16241B]">
                         <span>₹ 0</span>
-                        <span className="px-2 py-0.5 rounded-md bg-[#FAF6EE] border border-[#E5DFCE] font-black text-[#1F4B43]">
+                        <span className="px-2.5 py-0.5 rounded-md bg-[#FAF6EE] border border-[#E5DFCE] font-black text-[#009E66]">
                           Up to ₹ {maxPrice}
                         </span>
-                        <span>₹ 2500</span>
+                        <span>₹ 5,000</span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* 2. Pet Type Accordion & Checkboxes */}
+                {/* 2. Pet Type Accordion & True Multi-Select Checkboxes */}
                 <div className="border-b border-[#F0EAE1] pb-5">
                   <button
+                    type="button"
                     onClick={() => setPetTypeAccordionOpen(!petTypeAccordionOpen)}
-                    className="w-full flex items-center justify-between text-sm font-black text-[#16241B] cursor-pointer"
+                    className="w-full flex items-center justify-between text-sm font-black text-[#009E66] cursor-pointer"
                   >
                     <span>Pet Type</span>
                     <ChevronDown
@@ -616,55 +440,47 @@ export const PetEssentialsPage: React.FC = () => {
                   {petTypeAccordionOpen && (
                     <div className="mt-3.5 space-y-2.5">
                       {/* Dogs */}
-                      <label
-                        onClick={() => handlePetTypeChange('DOG')}
-                        className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#16241B] select-none"
-                      >
+                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none">
                         <input
                           type="checkbox"
-                          checked={selectedPetType === 'DOG'}
-                          onChange={() => handlePetTypeChange('DOG')}
-                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                          checked={selectedPetTypes.includes('DOG')}
+                          onChange={() => handleTogglePetType('DOG')}
+                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                         />
-                        <span>Dogs ({petTypeCounts.DOG || 24})</span>
+                        <span>Dogs ({petTypeCounts.DOG || 0})</span>
                       </label>
 
                       {/* Cats */}
-                      <label
-                        onClick={() => handlePetTypeChange('CAT')}
-                        className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#16241B] select-none"
-                      >
+                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none">
                         <input
                           type="checkbox"
-                          checked={selectedPetType === 'CAT'}
-                          onChange={() => handlePetTypeChange('CAT')}
-                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                          checked={selectedPetTypes.includes('CAT')}
+                          onChange={() => handleTogglePetType('CAT')}
+                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                         />
-                        <span>Cats ({petTypeCounts.CAT || 21})</span>
+                        <span>Cats ({petTypeCounts.CAT || 0})</span>
                       </label>
 
                       {/* Small Pets */}
-                      <label
-                        onClick={() => handlePetTypeChange('SMALL_PET')}
-                        className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#16241B] select-none"
-                      >
+                      <label className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none">
                         <input
                           type="checkbox"
-                          checked={selectedPetType === 'SMALL_PET'}
-                          onChange={() => handlePetTypeChange('SMALL_PET')}
-                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                          checked={selectedPetTypes.includes('SMALL_PET')}
+                          onChange={() => handleTogglePetType('SMALL_PET')}
+                          className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                         />
-                        <span>Small Pets ({petTypeCounts.SMALL_PET || 16})</span>
+                        <span>Small Pets ({petTypeCounts.SMALL_PET || 0})</span>
                       </label>
                     </div>
                   )}
                 </div>
 
-                {/* 3. Brand Accordion & Checkboxes */}
+                {/* 3. Brand Accordion & Multi-Select Checkboxes */}
                 <div>
                   <button
+                    type="button"
                     onClick={() => setBrandAccordionOpen(!brandAccordionOpen)}
-                    className="w-full flex items-center justify-between text-sm font-black text-[#16241B] cursor-pointer"
+                    className="w-full flex items-center justify-between text-sm font-black text-[#009E66] cursor-pointer"
                   >
                     <span>Brand</span>
                     <ChevronDown
@@ -682,14 +498,13 @@ export const PetEssentialsPage: React.FC = () => {
                           return (
                             <label
                               key={brand}
-                              onClick={() => handleToggleBrand(brand)}
-                              className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#16241B] select-none"
+                              className="flex items-center gap-3 text-xs font-bold text-[#334437] cursor-pointer hover:text-[#009E66] select-none"
                             >
                               <input
                                 type="checkbox"
                                 checked={isChecked}
                                 onChange={() => handleToggleBrand(brand)}
-                                className="w-4 h-4 rounded border-[#CBDAC6] text-[#1F4B43] focus:ring-0 cursor-pointer accent-[#1F4B43]"
+                                className="w-4 h-4 rounded border-[#CBDAC6] text-[#009E66] focus:ring-0 cursor-pointer accent-[#009E66]"
                               />
                               <span className="truncate">
                                 {brand} ({count})
@@ -704,11 +519,12 @@ export const PetEssentialsPage: React.FC = () => {
                   )}
                 </div>
 
-                {/* Clear All Filters Button */}
+                {/* Reset All Filters Button */}
                 <div className="pt-2 border-t border-[#F0EAE1]">
                   <button
+                    type="button"
                     onClick={clearFilters}
-                    className="w-full py-2 px-3 rounded-xl bg-[#FAF6EE] text-xs font-bold text-[#E1694F] hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer border border-[#E5DFCE]"
+                    className="w-full py-2 px-3 rounded-xl bg-[#FAF6EE] text-xs font-bold text-[#EF7C3C] hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer border border-[#E5DFCE]"
                   >
                     Reset All Filters
                   </button>
@@ -720,7 +536,7 @@ export const PetEssentialsPage: React.FC = () => {
                 RIGHT MAIN CONTENT: Circular Subcategories & Grid
             =============================================================== */}
             <div className={`col-span-12 ${showFilters ? 'lg:col-span-9' : 'lg:col-span-12'} space-y-6`}>
-              {/* Horizontal Circular Subcategory Carousel Matching Screenshot */}
+              {/* Horizontal Circular Subcategory Carousel */}
               <div className="bg-white rounded-2xl border border-[#EDE7D9] p-4 shadow-2xs">
                 <div className="flex items-start gap-6 overflow-x-auto no-scrollbar py-2">
                   {subcategoryPills.map((pill) => {
@@ -731,17 +547,16 @@ export const PetEssentialsPage: React.FC = () => {
                     return (
                       <button
                         key={pill.name}
-                        onClick={() => {
-                          setSelectedSubcategory(pill.name);
-                        }}
+                        type="button"
+                        onClick={() => setSelectedSubcategory(pill.name)}
                         className="flex flex-col items-center group cursor-pointer shrink-0 transition-all focus:outline-none"
                       >
-                        {/* Circular Avatar / Icon */}
+                        {/* Circular Avatar */}
                         <div
                           className={`w-16 h-16 rounded-full overflow-hidden p-1 transition-all ${
                             isSelected
                               ? 'ring-3 ring-[#EF7C3C] ring-offset-2 scale-105 shadow-sm'
-                              : 'border border-[#E5DFCE] group-hover:scale-105 group-hover:border-[#1F4B43]'
+                              : 'border border-[#E5DFCE] group-hover:scale-105 group-hover:border-[#009E66]'
                           }`}
                         >
                           <img
@@ -756,13 +571,13 @@ export const PetEssentialsPage: React.FC = () => {
                           className={`text-xs mt-2 text-center whitespace-nowrap font-bold transition-colors ${
                             isSelected
                               ? 'text-[#EF7C3C] font-black'
-                              : 'text-[#556658] group-hover:text-[#16241B]'
+                              : 'text-[#556658] group-hover:text-[#009E66]'
                           }`}
                         >
                           {pill.name}
                         </span>
 
-                        {/* Active Orange Underline Bar Indicator */}
+                        {/* Active Indicator */}
                         {isSelected && (
                           <div className="w-10 h-0.5 bg-[#EF7C3C] rounded-full mt-1 animate-in fade-in duration-200" />
                         )}
@@ -772,37 +587,39 @@ export const PetEssentialsPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Active Filters Summary & Count */}
+              {/* Active Filters Summary & Dynamic Product Count */}
               <div className="flex items-center justify-between text-xs text-[#556658]">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-[#16241B]">
-                    {selectedPetType === 'DOG'
-                      ? 'Dogs Essentials'
-                      : selectedPetType === 'CAT'
-                      ? 'Cats Essentials'
-                      : 'Small Pets Essentials'}
+                <div className="flex items-center flex-wrap gap-2">
+                  <span className="font-black text-[#009E66]">
+                    {selectedPetTypes.length === 0
+                      ? 'All Pets Essentials'
+                      : selectedPetTypes.length === 1
+                        ? selectedPetTypes[0] === 'DOG'
+                          ? 'Dogs Essentials'
+                          : selectedPetTypes[0] === 'CAT'
+                            ? 'Cats Essentials'
+                            : 'Small Pets Essentials'
+                        : `${selectedPetTypes.map((p) => (p === 'DOG' ? 'Dogs' : p === 'CAT' ? 'Cats' : 'Small Pets')).join(' & ')} Essentials`}
                   </span>
                   {selectedSubcategory !== 'All' && (
                     <span className="font-bold text-[#EF7C3C]">· {selectedSubcategory}</span>
                   )}
                   {selectedBrands.length > 0 && (
-                    <span className="font-bold text-[#1F4B43]">
-                      · {selectedBrands.join(', ')}
-                    </span>
+                    <span className="font-bold text-[#009E66]">· {selectedBrands.join(', ')}</span>
                   )}
                 </div>
 
-                <span className="font-bold">
+                <span className="font-black text-[#009E66]">
                   {displayedProducts.length} {displayedProducts.length === 1 ? 'product' : 'products'} found
                 </span>
               </div>
 
               {/* Product Grid & States */}
               {loading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                   {[...Array(8)].map((_, i) => (
                     <div key={i} className="bg-white rounded-2xl p-4 border border-[#EDE7D9] space-y-3">
-                      <Skeleton className="w-full h-44 rounded-xl bg-[#FAF6EE]" />
+                      <Skeleton className="w-full aspect-[4/3] rounded-xl bg-[#FAF6EE]" />
                       <Skeleton className="w-20 h-4 rounded bg-[#FAF6EE]" />
                       <Skeleton className="w-3/4 h-5 rounded bg-[#FAF6EE]" />
                       <div className="pt-2 flex justify-between items-center">
@@ -816,151 +633,37 @@ export const PetEssentialsPage: React.FC = () => {
                 <ErrorState message={error} onRetry={fetchProducts} />
               ) : displayedProducts.length === 0 ? (
                 <EmptyState
-                  title="No pet essentials found"
-                  description="No items match your selected filter criteria. Try adjusting the price slider or resetting brand selections."
+                  title="No Paw Store products found"
+                  description="No items match your selected filter criteria. Try adjusting the price slider or resetting brand and pet type selections."
                   actionLabel="Reset All Filters"
                   onAction={clearFilters}
                 />
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                  {displayedProducts.map((product) => {
-                    const cartItem = cartItems[product.id];
-                    const isUpdating = updatingCart[product.id];
-                    const isOutOfStock = (product.stockQuantity || 0) <= 0;
-                    const imageUrl = getProductImageUrl(product.name, product.imageUrl, product.id);
-
-                    return (
-                      <div
-                        key={product.id}
-                        className="group bg-white rounded-2xl border border-[#EDE7D9] shadow-2xs hover:shadow-xl hover:border-[#1F4B43]/40 transition-all duration-300 flex flex-col justify-between overflow-hidden relative"
-                      >
-                        {/* Top Badges & Wishlist */}
-                        <div className="relative w-full h-48 bg-[#FAF6EE]/40 overflow-hidden flex items-center justify-center p-4">
-                          <img
-                            src={imageUrl}
-                            alt={product.name}
-                            loading="lazy"
-                            className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                          />
-
-                          {/* Vet Approved Badge Matching Reference */}
-                          <span className="absolute top-3 left-3 flex items-center gap-1 px-2.5 py-1 rounded-md bg-[#EBF5FF] text-[#1D4ED8] text-[10px] font-black tracking-wider uppercase border border-[#BFDBFE] shadow-2xs">
-                            <Stethoscope className="w-3 h-3 text-[#2563EB]" />
-                            <span>Vet Approved</span>
-                          </span>
-
-                          {/* Wishlist Heart Toggle */}
-                          <div className="absolute top-3 right-3">
-                            <HeartToggle
-                              itemType="PRODUCT"
-                              itemId={product.id}
-                              isInitiallySaved={isSaved('PRODUCT', product.id)}
-                            />
-                          </div>
-
-                          {/* Pickup Ready Tag */}
-                          <div className="absolute bottom-2 left-3 flex items-center gap-1 text-[10px] font-bold text-[#1F4B43] bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded-full border border-[#EDE7D9]">
-                            <Store className="w-3 h-3 text-[#E3A23A]" />
-                            <span>Pickup Ready</span>
-                          </div>
-                        </div>
-
-                        {/* Product Info */}
-                        <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                          <div>
-                            {/* Brand & Rating */}
-                            <div className="flex items-center justify-between text-[11px] font-bold text-[#556658] mb-1">
-                              <span className="text-[#1F4B43] uppercase tracking-wider font-black">
-                                {product.brand || product.category}
-                              </span>
-                              <div className="flex items-center gap-1 text-[#16241B]">
-                                <Star className="w-3.5 h-3.5 fill-[#E3A23A] text-[#E3A23A]" />
-                                <span className="font-black text-xs">
-                                  {product.rating ? Number(product.rating).toFixed(1) : '4.8'}
-                                </span>
-                                <span className="text-[#88998C] text-[10px]">
-                                  ({product.reviewsCount || 18})
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Title */}
-                            <h4 className="text-xs sm:text-sm font-bold text-[#16241B] line-clamp-2 leading-snug group-hover:text-[#1F4B43] transition-colors">
-                              {product.name}
-                            </h4>
-
-                            {/* Subcategory */}
-                            {product.subcategory && (
-                              <p className="text-[11px] text-[#88998C] mt-1 font-medium">
-                                {product.subcategory}
-                              </p>
-                            )}
-                          </div>
-
-                          {/* Bottom Pricing & In-Store Cart Button */}
-                          <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between gap-2">
-                            <div>
-                              <span className="text-base sm:text-lg font-black text-[#1F4B43]">
-                                {formatCurrency(product.price)}
-                              </span>
-                              <span className="block text-[10px] font-semibold text-[#88998C]">
-                                In-Store Pickup
-                              </span>
-                            </div>
-
-                            {/* Cart Add / Quantity */}
-                            {isOutOfStock ? (
-                              <button
-                                disabled
-                                className="px-3 py-1.5 rounded-xl bg-gray-100 text-gray-400 text-xs font-bold cursor-not-allowed border border-gray-200"
-                              >
-                                Out of Stock
-                              </button>
-                            ) : cartItem ? (
-                              <div className="flex items-center bg-[#1F4B43] text-white rounded-xl p-0.5 shadow-sm">
-                                <button
-                                  onClick={() => handleDecreaseQuantity(product, cartItem)}
-                                  disabled={isUpdating}
-                                  aria-label="Decrease quantity"
-                                  className="w-7 h-7 flex items-center justify-center hover:bg-[#163832] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                                >
-                                  <Minus className="w-3.5 h-3.5" />
-                                </button>
-                                <span className="w-7 text-center font-black text-xs">
-                                  {cartItem.quantity}
-                                </span>
-                                <button
-                                  onClick={() => handleIncreaseQuantity(product, cartItem)}
-                                  disabled={isUpdating || cartItem.quantity >= product.stockQuantity}
-                                  aria-label="Increase quantity"
-                                  className="w-7 h-7 flex items-center justify-center hover:bg-[#163832] rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleAddToCart(product)}
-                                disabled={isUpdating}
-                                className="h-9 px-3.5 rounded-xl text-xs font-bold bg-[#1F4B43] hover:bg-[#163832] text-white border-none flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
-                              >
-                                <ShoppingBag className="w-3.5 h-3.5 text-[#E3A23A]" />
-                                <span>Add to Cart</span>
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                  {displayedProducts.map((product) => (
+                    <div key={product.id} className="h-full flex flex-col">
+                      <ProductCard
+                        product={product}
+                        isSaved={isSaved('PRODUCT', product.id)}
+                        onQuickView={(p) => setSelectedProductDetail(p)}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           </div>
         </div>
       </main>
+
+      {/* Product Detail Modal */}
+      {selectedProductDetail && (
+        <ProductDetailModal
+          product={selectedProductDetail}
+          onClose={() => setSelectedProductDetail(null)}
+          isSaved={isSaved('PRODUCT', selectedProductDetail.id)}
+        />
+      )}
 
       {/* Floating Sticky Cart Bar */}
       <StickyCartBar />
@@ -970,3 +673,5 @@ export const PetEssentialsPage: React.FC = () => {
     </div>
   );
 };
+
+export default PetEssentialsPage;

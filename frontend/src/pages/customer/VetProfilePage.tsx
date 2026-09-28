@@ -49,38 +49,6 @@ interface VetReview {
   createdAt?: string;
 }
 
-function formatPetSpecialist(petTypesStr?: string): string {
-  if (!petTypesStr) return 'Dog & Cat Specialist';
-  const types = petTypesStr
-    .split(',')
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (types.length === 0) return 'Dog & Cat Specialist';
-
-  const mapName: Record<string, string> = {
-    dogs: 'Dog',
-    dog: 'Dog',
-    cats: 'Cat',
-    cat: 'Cat',
-    birds: 'Avian',
-    bird: 'Avian',
-    rabbits: 'Rabbit',
-    rabbit: 'Rabbit',
-    exotic: 'Exotic Pet',
-    'exotic pets': 'Exotic Pet',
-  };
-
-  const formatted = types.map((t) => mapName[t] || (t.charAt(0).toUpperCase() + t.slice(1)));
-  if (formatted.length === 1) {
-    return `${formatted[0]} Specialist`;
-  }
-  if (formatted.length === 2) {
-    return `${formatted[0]} & ${formatted[1]} Specialist`;
-  }
-  return `${formatted.slice(0, -1).join(', ')} & ${formatted[formatted.length - 1]} Specialist`;
-}
-
 export const VetProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -125,7 +93,7 @@ export const VetProfilePage: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF6EE] flex flex-col font-sans">
-        <Navbar activePage="find-a-vet" />
+        <Navbar activePage="services" />
         <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-6">
           <Skeleton className="h-8 w-40 rounded-full" />
           <div className="bg-white rounded-3xl p-8 border border-[#EDE7D9] space-y-6">
@@ -147,7 +115,7 @@ export const VetProfilePage: React.FC = () => {
   if (error || !vet) {
     return (
       <div className="min-h-screen bg-[#FAF6EE] flex flex-col font-sans">
-        <Navbar activePage="find-a-vet" />
+        <Navbar activePage="services" />
         <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-16 flex items-center justify-center">
           <ErrorState
             title="Veterinarian Profile Not Found"
@@ -165,19 +133,19 @@ export const VetProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#FAF6EE] text-[#1B2B1E] flex flex-col font-sans selection:bg-[#EF7C3C]/20 selection:text-[#EF7C3C]">
-      <Navbar activePage="find-a-vet" />
+      <Navbar activePage="services" />
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10">
+      <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
         {/* Back Link */}
         <button
-          onClick={() => navigate('/find-a-vet')}
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#287A41] hover:text-[#1B2B1E] bg-white border border-[#D5EAD9] px-4 py-2 rounded-full shadow-2xs transition-all cursor-pointer"
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#009E66] hover:text-[#1B2B1E] bg-white border border-[#D5EAD9] px-4 py-2 rounded-full shadow-2xs transition-all cursor-pointer"
         >
-          <ChevronLeft className="w-4 h-4" /> Back to Veterinarians
+          <ChevronLeft className="w-4 h-4" /> Back
         </button>
 
         {/* Vet Card Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-10 border border-[#EDE7D9] shadow-sm relative overflow-hidden space-y-8">
+        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#EDE7D9] shadow-sm relative overflow-hidden space-y-6">
           <div className="flex flex-col md:flex-row gap-8 items-start">
             {/* Vet Image */}
             <div className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-3xl overflow-hidden bg-[#F4EFE6] border border-[#E5DFCE] shrink-0 shadow-xs">
@@ -199,7 +167,7 @@ export const VetProfilePage: React.FC = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h1 className="text-2xl sm:text-3xl font-black text-[#16241B]">{vet.name}</h1>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#287A41] bg-[#E3F3E9] px-2.5 py-0.5 rounded-full">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#009E66] bg-[#E3F3E9] px-2.5 py-0.5 rounded-full">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Verified Vet
                     </span>
                   </div>
@@ -231,12 +199,12 @@ export const VetProfilePage: React.FC = () => {
 
               {/* Badges / Key Specs */}
               <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                <span className="inline-flex items-center gap-1 font-bold text-[#287A41] bg-[#EFF8F0] border border-[#D5EAD9] px-3 py-1 rounded-full">
+                <span className="inline-flex items-center gap-1 font-bold text-[#009E66] bg-[#EFF8F0] border border-[#D5EAD9] px-3 py-1 rounded-full">
                   <Award className="w-3.5 h-3.5" /> {vet.experienceYears || 5}+ Years Experience
                 </span>
                 {vet.petTypes && (
                   <span className="inline-flex items-center gap-1 font-bold text-[#7E22CE] bg-[#F3E8FF] border border-[#E9D5FF] px-3 py-1 rounded-full">
-                    <Sparkles className="w-3.5 h-3.5" /> {formatPetSpecialist(vet.petTypes)}
+                    <Sparkles className="w-3.5 h-3.5" /> Treats: {vet.petTypes}
                   </span>
                 )}
                 {vet.secondarySpecialization && (
@@ -260,7 +228,7 @@ export const VetProfilePage: React.FC = () => {
           <div className="border-t border-[#EDE7D9] pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <span className="text-xs font-semibold text-[#556658] block">Consultation Fee</span>
-              <span className="text-2xl font-black text-[#287A41]">
+              <span className="text-2xl font-black text-[#009E66]">
                 {formatCurrency(vet.consultationFee ?? 50)}
                 <span className="text-xs text-[#556658] font-normal"> / in-clinic visit</span>
               </span>
@@ -284,7 +252,7 @@ export const VetProfilePage: React.FC = () => {
               <h2 className="text-2xl font-black text-[#16241B]">Customer Reviews</h2>
               <p className="text-xs text-[#556658] mt-0.5">Verified feedback from real completed pet appointments</p>
             </div>
-            <div className="text-xs font-bold text-[#287A41] bg-[#E3F3E9] px-3 py-1 rounded-full">
+            <div className="text-xs font-bold text-[#009E66] bg-[#E3F3E9] px-3 py-1 rounded-full">
               {reviews.length} Review{reviews.length === 1 ? '' : 's'} Total
             </div>
           </div>
@@ -295,7 +263,7 @@ export const VetProfilePage: React.FC = () => {
                 <div key={rev.id} className="bg-white rounded-2xl p-5 border border-[#EDE7D9] shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[#E3F3E9] text-[#287A41] font-black text-xs flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-[#E3F3E9] text-[#009E66] font-black text-xs flex items-center justify-center">
                         {rev.customerName ? rev.customerName.charAt(0) : 'A'}
                       </div>
                       <div>

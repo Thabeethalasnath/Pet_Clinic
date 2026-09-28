@@ -30,7 +30,7 @@ const CATEGORIES = [
     label: 'All Topics',
     icon: BookOpen,
     description: 'Browse all frequently asked questions',
-    color: 'bg-[#1F4B43] text-white',
+    color: 'bg-[#009E66] text-white',
   },
   {
     id: 'appointments',
@@ -102,7 +102,7 @@ const FAQS: FAQItem[] = [
     category: 'orders',
     question: 'How does in-store pickup work at Pawfectly?',
     answer:
-      'Pawfectly operates on a dedicated in-store pickup model. When you add items from Pharmacy or Paw Store to your bag and complete checkout, you are placing a physical product reservation. Our staff gathers and packages your items at our Care Center (104 Wellness Boulevard). You receive a confirmation code and can collect & pay for your order at the ground-floor pickup counter during business hours.',
+      'Pawfectly operates on a dedicated in-store pickup model. When you add items from Pharmacy or Paw Store to your bag and complete checkout, you are placing a physical product reservation. Our staff gathers and packages your items at our Care Center (104 Wellness Boulevard, Indiranagar, Bengaluru, Karnataka, India). You receive a confirmation code and can collect & pay for your order at the ground-floor pickup counter during business hours.',
     tags: ['in-store pickup', 'how pickup works', 'reservation', 'collect'],
   },
   {
@@ -233,12 +233,8 @@ export const HelpCenterPage: React.FC = () => {
         {/* Knowledge Base Search Hero */}
         <section className="bg-gradient-to-b from-[#1F4B43] to-[#16241B] text-white py-8 sm:py-10 px-4 sm:px-6 lg:px-8 border-b border-[#23382A]">
           <div className="max-w-4xl mx-auto text-center space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E3A23A]/15 border border-[#E3A23A]/30 text-[#E3A23A] text-xs font-bold uppercase tracking-wider">
-              <HelpCircle className="w-3.5 h-3.5" />
-              Pawfectly Knowledge Base
-            </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              How Can We <span className="text-[#E3A23A]">Help You Today?</span>
+              How Can We <span className="text-[#EF7C3C]">Help You Today?</span>
             </h1>
             <p className="text-sm sm:text-base text-[#CBDAC6] max-w-xl mx-auto">
               Search questions about appointment bookings, in-store pickup orders, pet wellness profiles, and pharmacy items.
@@ -247,13 +243,13 @@ export const HelpCenterPage: React.FC = () => {
             {/* Live Search Bar */}
             <div className="relative max-w-2xl mx-auto pt-1">
               <div className="relative flex items-center">
-                <Search className="w-5 h-5 text-[#1F4B43] absolute left-4 pointer-events-none" />
+                <Search className="w-5 h-5 text-[#009E66] absolute left-4 pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search by keyword (e.g. pickup, appointment, restock, payment)..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-10 py-3.5 rounded-2xl bg-white text-[#16241B] text-sm sm:text-base placeholder-[#5E6E62] border-2 border-transparent focus:border-[#E3A23A] focus:outline-hidden shadow-lg transition-all"
+                  className="w-full pl-12 pr-10 py-3.5 rounded-2xl bg-white text-[#16241B] text-sm sm:text-base placeholder-[#5E6E62] border-2 border-transparent focus:border-[#EF7C3C] focus:outline-hidden shadow-lg transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -298,14 +294,14 @@ export const HelpCenterPage: React.FC = () => {
                     }}
                     className={`p-4 rounded-2xl border text-left transition-colors duration-200 flex flex-col justify-between group cursor-pointer h-full min-h-[104px] ${
                       isSelected
-                        ? 'bg-[#1F4B43] text-white border-[#1F4B43] shadow-xs'
-                        : 'bg-white text-[#16241B] border-[#CBDAC6]/60 hover:border-[#1F4B43] hover:shadow-xs'
+                        ? 'bg-[#009E66] text-white border-[#009E66] shadow-xs'
+                        : 'bg-white text-[#16241B] border-[#CBDAC6]/60 hover:border-[#009E66] hover:shadow-xs'
                     }`}
                   >
                     <div
                       className={`w-9 h-9 rounded-xl flex items-center justify-center mb-3 transition-colors ${
                         isSelected
-                          ? 'bg-white/15 text-[#E3A23A]'
+                          ? 'bg-white/15 text-[#EF7C3C]'
                           : 'bg-[#F6F7F2] text-[#1F4B43] group-hover:bg-[#1F4B43]/10'
                       }`}
                     >
@@ -329,9 +325,9 @@ export const HelpCenterPage: React.FC = () => {
           {/* Results Summary Bar */}
           <div className="flex items-center justify-between pb-3 border-b border-[#CBDAC6]/60">
             <p className="text-xs sm:text-sm text-[#445548] font-medium">
-              Showing <span className="font-bold text-[#1F4B43]">{filteredFaqs.length}</span> {filteredFaqs.length === 1 ? 'answer' : 'answers'}
+              Showing <span className="font-bold text-[#009E66]">{filteredFaqs.length}</span> {filteredFaqs.length === 1 ? 'answer' : 'answers'}
               {selectedCategory !== 'all' && (
-                <> in <span className="font-semibold text-[#1F4B43]">{CATEGORIES.find(c => c.id === selectedCategory)?.label}</span></>
+                <> in <span className="font-semibold text-[#009E66]">{CATEGORIES.find(c => c.id === selectedCategory)?.label}</span></>
               )}
             </p>
 
@@ -342,7 +338,7 @@ export const HelpCenterPage: React.FC = () => {
                   setSelectedCategory('all');
                   setSearchQuery('');
                 }}
-                className="text-xs font-bold text-[#E1694F] hover:underline cursor-pointer"
+                className="text-xs font-bold text-[#EF7C3C] hover:underline cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -365,14 +361,14 @@ export const HelpCenterPage: React.FC = () => {
                       className="w-full text-left p-4 sm:p-5 flex items-start justify-between gap-4 cursor-pointer focus:outline-hidden"
                     >
                       <div className="flex items-start gap-3 min-w-0">
-                        <HelpCircle className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${isOpen ? 'text-[#E3A23A]' : 'text-[#1F4B43]'}`} />
-                        <h3 className="text-sm sm:text-base font-bold text-[#1F4B43] leading-snug">
+                        <HelpCircle className={`w-5 h-5 shrink-0 mt-0.5 transition-colors ${isOpen ? 'text-[#EF7C3C]' : 'text-[#009E66]'}`} />
+                        <h3 className="text-sm sm:text-base font-bold text-[#009E66] leading-snug">
                           {faq.question}
                         </h3>
                       </div>
                       <div
                         className={`w-7 h-7 rounded-full bg-[#F6F7F2] border border-[#CBDAC6]/60 flex items-center justify-center shrink-0 transition-all duration-200 ${
-                          isOpen ? 'rotate-180 bg-[#1F4B43] text-white border-transparent' : 'text-[#1F4B43]'
+                          isOpen ? 'rotate-180 bg-[#009E66] text-white border-transparent' : 'text-[#009E66]'
                         }`}
                       >
                         <ChevronDown className="w-3.5 h-3.5" />
@@ -400,10 +396,10 @@ export const HelpCenterPage: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-12 px-4 max-w-md mx-auto bg-white rounded-2xl border border-[#CBDAC6]/60 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-[#FAF6EE] text-[#E3A23A] flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-full bg-[#FAF6EE] text-[#EF7C3C] flex items-center justify-center mx-auto">
                 <Search className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-[#1F4B43]">
+              <h3 className="text-base font-bold text-[#009E66]">
                 No matching answers found
               </h3>
               <p className="text-xs text-[#5E6E62]">
@@ -436,9 +432,9 @@ export const HelpCenterPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <Link
                 to="/contact-support"
-                className="px-5 py-3 rounded-xl bg-[#E3A23A] hover:bg-[#d4942e] text-[#16241B] text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all"
+                className="px-5 py-3 rounded-xl bg-[#009E66] hover:bg-[#008757] text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-sm transition-all"
               >
-                <Mail className="w-4 h-4" />
+                <Mail className="w-4 h-4 text-[#EF7C3C]" />
                 Contact Support
               </Link>
             </div>

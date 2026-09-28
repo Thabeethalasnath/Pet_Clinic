@@ -13,7 +13,7 @@ export const Badge: React.FC<BadgeProps> = ({
 }) => {
   const variantStyles = {
     neutral: 'bg-white/80 border border-[#E5E0D2] text-[#334437]',
-    mint: 'bg-[#E3F6E9] text-[#287A41]',
+    mint: 'bg-[#E3F6E9] text-[#009E66]',
     yellow: 'bg-[#FFF6D6] text-[#8C6D00]',
     pink: 'bg-[#FFE8E8] text-[#D32F2F]',
     blue: 'bg-[#E3F2FD] text-[#1976D2]',

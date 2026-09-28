@@ -40,7 +40,7 @@ export const PrivacyPolicyPage: React.FC = () => {
             By accessing or using our platform, you acknowledge that you have read and understood the practices described herein. If you have any questions or require clarification regarding your privacy rights, please reach out to us at{' '}
             <a
               href="mailto:privacy@pawfectly.com"
-              className="text-[#1F4B43] font-bold underline hover:text-[#E3A23A]"
+              className="text-[#009E66] font-bold underline hover:text-[#EF7C3C]"
             >
               privacy@pawfectly.com
             </a>
@@ -101,7 +101,7 @@ export const PrivacyPolicyPage: React.FC = () => {
       icon: Lock,
       content: (
         <div className="space-y-3 text-sm sm:text-base text-[#445548] leading-relaxed">
-          <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6]/80 text-xs sm:text-sm text-[#1F4B43] font-medium leading-relaxed">
+          <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6]/80 text-xs sm:text-sm text-[#009E66] font-medium leading-relaxed">
             <strong>Important Payment Clarity:</strong> Pawfectly operates exclusively on an <em>In-Store Collection & Payment</em> model. Our web application does not process, charge, or store credit card or debit card numbers online.
           </div>
           <p>
@@ -190,9 +190,9 @@ export const PrivacyPolicyPage: React.FC = () => {
             If you have questions, complaints, or requests regarding this Privacy Policy or how your pet's wellness records are managed, please contact our Data Protection Officer:
           </p>
           <div className="p-4 rounded-xl bg-[#FAF6EE] border border-[#CBDAC6]/60 text-sm space-y-1.5">
-            <p className="font-bold text-[#1F4B43]">Pawfectly Privacy & Compliance Office</p>
-            <p className="text-[#445548]">Email: <a href="mailto:privacy@pawfectly.com" className="text-[#1F4B43] font-semibold underline">privacy@pawfectly.com</a></p>
-            <p className="text-[#445548]">Address: 104 Wellness Boulevard, Suite 200, Pet District</p>
+            <p className="font-bold text-[#009E66]">Pawfectly Privacy & Compliance Office</p>
+            <p className="text-[#445548]">Email: <a href="mailto:privacy@pawfectly.com" className="text-[#009E66] font-semibold underline">privacy@pawfectly.com</a></p>
+            <p className="text-[#445548]">Address: 104 Wellness Boulevard, Indiranagar, Bengaluru, Karnataka 560038, India</p>
             <p className="text-xs text-[#5E6E62] pt-1">Response time: Typically within 2 business days.</p>
           </div>
         </div>
@@ -236,20 +236,16 @@ export const PrivacyPolicyPage: React.FC = () => {
         {/* Top Header Banner */}
         <section className="bg-gradient-to-b from-[#1F4B43] to-[#16241B] text-white py-5 sm:py-7 px-4 sm:px-6 lg:px-8 border-b border-[#23382A]">
           <div className="max-w-5xl mx-auto text-center space-y-2.5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#CBDAC6]/15 border border-[#CBDAC6]/30 text-[#CBDAC6] text-xs font-bold uppercase tracking-wider">
-              <Shield className="w-3.5 h-3.5 text-[#E3A23A]" />
-              Legal & Data Protection
-            </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Privacy <span className="text-[#E3A23A]">Policy</span>
+              Privacy <span className="text-[#EF7C3C]">Policy</span>
             </h1>
             <div className="flex items-center justify-center gap-3 text-xs sm:text-sm text-[#CBDAC6]/80 font-medium">
               <span className="inline-flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-[#E3A23A]" />
+                <Clock className="w-3.5 h-3.5 text-[#EF7C3C]" />
                 Last Updated: September 24, 2026
               </span>
               <span>•</span>
-              <span className="text-[#E3A23A] font-semibold">
+              <span className="text-[#EF7C3C] font-semibold">
                 Draft Documentation
               </span>
             </div>
@@ -259,8 +255,8 @@ export const PrivacyPolicyPage: React.FC = () => {
         {/* Content Container */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8">
           {/* Draft Disclaimer Box */}
-          <div className="mb-10 p-5 rounded-2xl bg-[#FAF6EE] border-l-4 border-[#E3A23A] border-y border-r border-[#CBDAC6]/60 flex items-start gap-4">
-            <AlertTriangle className="w-6 h-6 text-[#E3A23A] shrink-0 mt-0.5" />
+          <div className="mb-10 p-5 rounded-2xl bg-[#FAF6EE] border-l-4 border-[#EF7C3C] border-y border-r border-[#CBDAC6]/60 flex items-start gap-4">
+            <AlertTriangle className="w-6 h-6 text-[#EF7C3C] shrink-0 mt-0.5" />
             <div className="text-xs sm:text-sm text-[#445548] leading-relaxed">
               <p className="font-bold text-[#1F4B43] text-sm sm:text-base">
                 Legal Notice & Draft Version Disclaimer
@@ -311,14 +307,14 @@ export const PrivacyPolicyPage: React.FC = () => {
                         onClick={() => scrollToSection(sec.id)}
                         className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-between group cursor-pointer ${
                           isCurrent
-                            ? 'bg-[#1F4B43] text-white shadow-xs'
-                            : 'text-[#445548] hover:bg-[#F6F7F2] hover:text-[#1F4B43]'
+                            ? 'bg-[#009E66] text-white shadow-xs'
+                            : 'text-[#445548] hover:bg-[#F6F7F2] hover:text-[#009E66]'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 truncate">
                           <Icon
                             className={`w-4 h-4 shrink-0 ${
-                              isCurrent ? 'text-[#E3A23A]' : 'text-[#5E6E62]'
+                              isCurrent ? 'text-[#EF7C3C]' : 'text-[#5E6E62]'
                             }`}
                           />
                           <span className="truncate">{sec.title}</span>
@@ -326,7 +322,7 @@ export const PrivacyPolicyPage: React.FC = () => {
                         <ChevronRight
                           className={`w-3.5 h-3.5 shrink-0 transition-transform ${
                             isCurrent
-                              ? 'text-[#E3A23A] translate-x-0.5'
+                              ? 'text-[#EF7C3C] translate-x-0.5'
                               : 'text-[#CBDAC6] opacity-0 group-hover:opacity-100'
                           }`}
                         />
@@ -338,13 +334,13 @@ export const PrivacyPolicyPage: React.FC = () => {
 
               {/* Quick Privacy Support Tile */}
               <div className="p-5 rounded-2xl bg-[#1F4B43] text-white text-xs space-y-2">
-                <p className="font-bold text-[#E3A23A] text-sm">Have Data Questions?</p>
+                <p className="font-bold text-[#EF7C3C] text-sm">Have Data Questions?</p>
                 <p className="text-[#CBDAC6] leading-relaxed">
                   You have the right to request a full copy of your pet's records or request account removal anytime.
                 </p>
                 <a
                   href="mailto:privacy@pawfectly.com"
-                  className="inline-flex items-center gap-1 text-[#E3A23A] font-bold hover:underline pt-1"
+                  className="inline-flex items-center gap-1 text-[#EF7C3C] font-bold hover:underline pt-1"
                 >
                   <Mail className="w-3.5 h-3.5" />
                   Email Privacy Desk →
@@ -363,10 +359,10 @@ export const PrivacyPolicyPage: React.FC = () => {
                     className="bg-white rounded-2xl border border-[#CBDAC6]/60 shadow-xs p-6 sm:p-8 scroll-mt-28 transition-all hover:border-[#CBDAC6]"
                   >
                     <div className="flex items-center gap-3 pb-4 mb-4 border-b border-[#CBDAC6]/40">
-                      <div className="w-9 h-9 rounded-xl bg-[#1F4B43]/10 text-[#1F4B43] flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5 text-[#1F4B43]" />
+                      <div className="w-9 h-9 rounded-xl bg-[#009E66]/10 text-[#009E66] flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-[#009E66]" />
                       </div>
-                      <h2 className="text-lg sm:text-xl font-bold text-[#1F4B43]">
+                      <h2 className="text-lg sm:text-xl font-bold text-[#009E66]">
                         {sec.title}
                       </h2>
                     </div>

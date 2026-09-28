@@ -275,13 +275,13 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               <div className="flex items-center gap-1.5">
                 {liveReviewsCount > 0 && liveRating !== null ? (
                   <>
-                    <div className="flex items-center text-[#E3A23A]">
+                    <div className="flex items-center text-[#EF7C3C]">
                       {[1, 2, 3, 4, 5].map((star) => (
                         <Star
                           key={star}
                           className={`w-4 h-4 ${
                             star <= Math.round(Number(liveRating))
-                              ? 'fill-[#E3A23A] text-[#E3A23A]'
+                              ? 'fill-[#EF7C3C] text-[#EF7C3C]'
                               : 'text-gray-300'
                           }`}
                         />
@@ -343,7 +343,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               )}
 
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF6EE] text-[#556658] text-xs font-bold border border-[#EDE7D9]">
-                <Store className="w-3.5 h-3.5 text-[#E3A23A]" />
+                <Store className="w-3.5 h-3.5 text-[#EF7C3C]" />
                 <span>Ready for In-Store Pickup</span>
               </span>
             </div>
@@ -471,7 +471,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
                 {liveReviewsCount > 0 && liveRating !== null ? (
                   <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#FAF6EE] border border-[#EDE7D9]">
-                    <Star className="w-4 h-4 fill-[#E3A23A] text-[#E3A23A]" />
+                    <Star className="w-4 h-4 fill-[#EF7C3C] text-[#EF7C3C]" />
                     <span className="text-sm font-black text-[#16241B]">{liveRating}</span>
                     <span className="text-xs text-[#88998C]">/ 5.0</span>
                   </div>
@@ -516,12 +516,12 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                         </div>
 
                         {/* Stars */}
-                        <div className="flex items-center text-[#E3A23A]">
+                        <div className="flex items-center text-[#EF7C3C]">
                           {[1, 2, 3, 4, 5].map((s) => (
                             <Star
                               key={s}
                               className={`w-3 h-3 ${
-                                s <= rev.rating ? 'fill-[#E3A23A] text-[#E3A23A]' : 'text-gray-300'
+                                s <= rev.rating ? 'fill-[#EF7C3C] text-[#EF7C3C]' : 'text-gray-300'
                               }`}
                             />
                           ))}
@@ -572,7 +572,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                             <Star
                               className={`w-5 h-5 ${
                                 star <= (newHoverRating || newRating)
-                                  ? 'fill-[#E3A23A] text-[#E3A23A]'
+                                  ? 'fill-[#EF7C3C] text-[#EF7C3C]'
                                   : 'text-gray-300'
                               }`}
                             />

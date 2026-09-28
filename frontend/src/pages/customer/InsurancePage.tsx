@@ -134,7 +134,7 @@ export const InsurancePage: React.FC = () => {
       cardBg: 'bg-white',
       border: 'border-2 border-[#3FA65C]',
       accentBg: 'bg-[#E6F9EC]',
-      accentText: 'text-[#287A41]',
+      accentText: 'text-[#009E66]',
       features: [
         'Everything in Basic coverage',
         'Chronic illness & infection treatments',
@@ -173,7 +173,7 @@ export const InsurancePage: React.FC = () => {
     {
       icon: ShieldCheck,
       bg: 'bg-[#E6F9EC]',
-      text: 'text-[#287A41]',
+      text: 'text-[#009E66]',
       title: 'Accident & Illness Coverage',
       description: 'Protection against unexpected vet bills, trauma, and chronic conditions.',
     },
@@ -298,8 +298,8 @@ export const InsurancePage: React.FC = () => {
         <section id="insurance-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 pb-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
             <div className="lg:col-span-5 space-y-6 text-left z-20">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                <Shield className="w-3.5 h-3.5 text-[#287A41]" />
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                <Shield className="w-3.5 h-3.5 text-[#009E66]" />
                 <span>PET INSURANCE</span>
               </div>
 
@@ -332,7 +332,7 @@ export const InsurancePage: React.FC = () => {
               {/* Trust Row */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-6 text-left">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[#E6F9EC] text-[#009E66] flex items-center justify-center shrink-0">
                     <ShieldCheck className="w-3.5 h-3.5" />
                   </div>
                   <span className="text-xs font-bold text-[#16241B]">No Hidden Fees</span>
@@ -367,7 +367,7 @@ export const InsurancePage: React.FC = () => {
                 <img
                   src={getCloudinaryImageUrl('insurance_hero')}
                   alt="Pet Insurance Protection"
-                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-300 hover:scale-[1.02] scale-105 sm:scale-110"
+                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none scale-105 sm:scale-110"
                 />
               </div>
             </div>
@@ -438,7 +438,7 @@ export const InsurancePage: React.FC = () => {
                       </span>
                       {plan.features.map((feature, fIdx) => (
                         <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[#334437]">
-                          <div className="w-4 h-4 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0 mt-0.5">
+                          <div className="w-4 h-4 rounded-full bg-[#E6F9EC] text-[#009E66] flex items-center justify-center shrink-0 mt-0.5">
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                           </div>
                           <span className="font-medium leading-snug">{feature}</span>
@@ -657,7 +657,7 @@ export const InsurancePage: React.FC = () => {
 
             {quoteSubmitted ? (
               <div className="text-center py-6 space-y-4">
-                <div className="w-14 h-14 rounded-full bg-[#E6F9EC] text-[#287A41] flex items-center justify-center mx-auto">
+                <div className="w-14 h-14 rounded-full bg-[#E6F9EC] text-[#009E66] flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8" />
                 </div>
                 <div className="space-y-1">

@@ -179,7 +179,7 @@ export const AdminInsuranceQuotesPage: React.FC = () => {
       render: (q: InsuranceQuoteRecord) => (
         <button
           onClick={() => handleOpenEditModal(q)}
-          className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] hover:bg-[#E6F9EC] text-[#16241B] hover:text-[#287A41] text-xs font-bold border border-[#EDE7D9] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          className="px-3 py-1.5 rounded-lg bg-[#FAF6EE] hover:bg-[#E6F9EC] text-[#16241B] hover:text-[#009E66] text-xs font-bold border border-[#EDE7D9] transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
         >
           <Edit3 className="w-3.5 h-3.5" />
           <span>Manage</span>

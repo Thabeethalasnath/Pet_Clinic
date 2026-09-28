@@ -1,52 +1,65 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, type Variants } from 'framer-motion';
 import { Navbar } from '../../components/layout/Navbar';
 import { Footer } from '../../components/layout/Footer';
 import { StickyCartBar } from '../../components/layout/StickyCartBar';
-import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl, formatCurrency } from '../../lib/utils';
-import { apiClient } from '../../lib/axios';
 import { useWishlistIds } from '../../hooks/useWishlistIds';
 import { useCart } from '../../hooks/useCart';
+import { usePharmacyProducts } from '../../hooks/usePharmacyProducts';
 import { ProductCard, type ProductItemData } from '../../components/products/ProductCard';
-import { QuickViewModal } from '../../components/products/QuickViewModal';
-import { SearchBar } from '../../components/products/SearchBar';
-import { RecommendationCarousel } from '../../components/products/RecommendationCarousel';
-import { Odometer } from '../../components/ui/Odometer';
-import { springs, staggerContainer, fadeUp } from '../../lib/motion';
+import { ProductDetailModal } from '../../components/products/ProductDetailModal';
+import { springs } from '../../lib/motion';
 import {
-  Star,
-  Pill,
-  Utensils,
-  Scissors,
-  Shield,
-  ShieldCheck,
-  HeartPulse,
-  SlidersHorizontal,
-  X,
-  Sparkles,
-  Zap,
+  PHARMACY_CATEGORIES,
+  HEALTH_CONCERNS,
+  matchesPharmacyCategory,
+} from '../../lib/pharmacy';
+import {
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
+// Scroll reveal animation variants
+const sectionRevealVariants: Variants = {
+  hidden: { opacity: 0, y: 35 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.55,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
+const containerStagger = (stagger: number = 0.08, delay: number = 0.05): Variants => ({
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: stagger,
+      delayChildren: delay,
+    },
+  },
+});
+
+const itemFadeUp: Variants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  },
+};
+
 export const PharmacyPage: React.FC = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState<ProductItemData[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Filters State synced to URL Query Params
-  const categoryParam = searchParams.get('category') || 'All';
-  const queryParam = searchParams.get('q') || '';
-  const maxPriceParam = Number(searchParams.get('maxPrice')) || 5000;
-  const rxParam = searchParams.get('rx') === 'true';
-
-  const [activeCategoryFilter, setActiveCategoryFilter] = useState<string>(categoryParam);
-  const [searchQuery, setSearchQuery] = useState<string>(queryParam);
-  const [maxPrice, setMaxPrice] = useState<number>(maxPriceParam);
-  const [prescriptionOnly, setPrescriptionOnly] = useState<boolean>(rxParam);
-  const [showFiltersPanel, setShowFiltersPanel] = useState<boolean>(false);
+  const { products, loading, error, refetch } = usePharmacyProducts();
+  const carouselRef = useRef<HTMLDivElement>(null);
 
   // Quick View Modal
   const [quickViewProduct, setQuickViewProduct] = useState<ProductItemData | null>(null);
@@ -55,561 +68,409 @@ export const PharmacyPage: React.FC = () => {
   const { isSaved } = useWishlistIds();
   const { addToCart, items: cartItems, isUpdating } = useCart();
 
-  // Sync state with URL params
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (activeCategoryFilter !== 'All') params.category = activeCategoryFilter;
-    if (searchQuery) params.q = searchQuery;
-    if (maxPrice < 5000) params.maxPrice = maxPrice.toString();
-    if (prescriptionOnly) params.rx = 'true';
-    setSearchParams(params, { replace: true });
-  }, [activeCategoryFilter, searchQuery, maxPrice, prescriptionOnly, setSearchParams]);
+  // Filter for Medications products for "Most Purchased Medicines"
+  const medicationProducts = useMemo(() => {
+    return products.filter((p) => matchesPharmacyCategory(p, 'medications'));
+  }, [products]);
 
-  const fetchProducts = () => {
-    setLoading(true);
-    setError(null);
-    apiClient
-      .get<ProductItemData[]>('/products')
-      .then((res) => {
-        setProducts(res.data || []);
-      })
-      .catch(() => {
-        setError('Failed to load pharmacy products. Please check your connection.');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const pharmacyCategoryTabs = [
-    { name: 'All', icon: Sparkles, bg: 'bg-[#FAF6EE]', text: 'text-[#16241B]' },
-    { name: 'Medications', icon: Pill, bg: 'bg-[#E6F9EC]', text: 'text-[#287A41]' },
-    { name: 'Food & Nutrition', icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
-    { name: 'Grooming & Hygiene', icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]' },
-    { name: 'Supplements & Care', icon: HeartPulse, bg: 'bg-[#F3E8FF]', text: 'text-[#7E22CE]' },
-    { name: 'Flea & Tick', icon: ShieldCheck, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]' },
-  ];
-
-  const specialCareItems = [
+  // Hero Banner Slider state
+  const [currentBannerIndex, setCurrentBannerIndex] = useState<number>(0);
+  const [isBannerHovered, setIsBannerHovered] = useState<boolean>(false);
+  const banners = [
     {
-      icon: Pill,
-      title: 'Prescription Medicines',
-      subtitle: "As per vet's recommendation",
+      id: 'banner-1',
+      image: '/images/pharmacy/banner-1.jpg',
+      label: 'Pet Meds Today! - 12% OFF Pharmacy Banner',
+      title: 'Pet Meds Today!',
+      subtitle: 'Quality Care For Your Pets, Now At A Discount.',
+      discount: '12% OFF',
+      link: '/pharmacy/medications',
     },
     {
-      icon: ShieldCheck,
-      title: 'Flea & Tick Prevention',
-      subtitle: 'Keep them safe, always',
+      id: 'banner-2',
+      image: '/images/pharmacy/banner-2.jpg',
+      label: 'Flea & Tick Defense - Protect Your Pets Banner',
+      title: 'Parasite Protection',
+      subtitle: 'Top Rated Spot-ons & Collars for Dogs & Cats.',
+      discount: '15% OFF',
+      link: '/pharmacy/flea-and-tick',
     },
     {
-      icon: HeartPulse,
-      title: 'Health Supplements',
-      subtitle: 'For stronger immunity',
+      id: 'banner-3',
+      image: '/images/pharmacy/banner-3.jpg',
+      label: 'Daily Supplements & Nutrition Boosters Banner',
+      title: 'Daily Vitality Boost',
+      subtitle: 'Multivitamins & Joint Support for Every Life Stage.',
+      discount: '20% OFF',
+      link: '/pharmacy/supplements-and-care',
     },
     {
-      icon: Zap,
-      title: 'Senior Pet Care',
-      subtitle: 'Special care for golden years',
+      id: 'banner-4',
+      image: '/images/pharmacy/banner-4.jpg',
+      label: 'Veterinary Prescriptions & Emergency Care Banner',
+      title: 'Prescription Care',
+      subtitle: 'Certified Medicines Formulated by Licensed Vets.',
+      discount: '10% OFF',
+      link: '/pharmacy/medications',
     },
   ];
 
-  // Filtered Products Memo
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) => {
-      // Category check
-      if (activeCategoryFilter !== 'All') {
-        const cat = activeCategoryFilter.toLowerCase();
-        const matchesCategory =
-          p.category.toLowerCase().includes(cat) ||
-          (cat.includes('food') && p.category.toLowerCase().includes('food')) ||
-          (cat.includes('grooming') && p.category.toLowerCase().includes('grooming')) ||
-          (cat.includes('supplements') && p.category.toLowerCase().includes('supplement')) ||
-          (cat.includes('flea') && (p.category.toLowerCase().includes('flea') || p.name.toLowerCase().includes('flea')));
+  // Automatic Banner Slideshow (Advances every 4 seconds, pauses on hover)
+  useEffect(() => {
+    if (isBannerHovered) return;
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev === banners.length - 1 ? 0 : prev + 1));
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isBannerHovered, banners.length]);
 
-        if (!matchesCategory) return false;
-      }
-
-      // Search query check
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchesQuery =
-          p.name.toLowerCase().includes(q) ||
-          p.category.toLowerCase().includes(q) ||
-          p.description.toLowerCase().includes(q);
-        if (!matchesQuery) return false;
-      }
-
-      // Price limit
-      if (p.price > maxPrice) return false;
-
-      // Prescription filter
-      if (prescriptionOnly && !p.prescriptionRequired) return false;
-
-      return true;
-    });
-  }, [products, activeCategoryFilter, searchQuery, maxPrice, prescriptionOnly]);
-
-  const activeFiltersCount =
-    (activeCategoryFilter !== 'All' ? 1 : 0) +
-    (searchQuery ? 1 : 0) +
-    (maxPrice < 5000 ? 1 : 0) +
-    (prescriptionOnly ? 1 : 0);
-
-  const resetFilters = () => {
-    setActiveCategoryFilter('All');
-    setSearchQuery('');
-    setMaxPrice(5000);
-    setPrescriptionOnly(false);
+  const scrollCarousel = (direction: 'left' | 'right') => {
+    if (carouselRef.current) {
+      const scrollAmount = direction === 'left' ? -320 : 320;
+      carouselRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col selection:bg-[#009E66]/20">
+    <div className="min-h-screen bg-[#F6F7F2] text-[#16241B] font-sans flex flex-col selection:bg-[#009E66]/20">
       {/* 1. Navbar */}
       <Navbar activePage="pharmacy" />
 
-      <main className="flex-grow space-y-14 lg:space-y-20 pb-20">
-        {/* 2. Hero Section */}
-        <section id="pharmacy-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-2">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-4 items-center">
-            {/* Left Column (5 cols) */}
-            <motion.div
-              initial={{ opacity: 0, x: -24 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={springs.soft}
-              className="lg:col-span-5 space-y-6 text-left z-20"
-            >
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#287A41]" />
-                <span>Verified Veterinary Care</span>
-              </div>
+      <main className="flex-grow space-y-10 sm:space-y-14 pb-14">
+        {/* =========================================================================
+            TASK 1 — HERO BANNER (SLIDER WITH PEAKING SIDES)
+            ========================================================================= */}
+        <motion.section
+          id="pharmacy-hero"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.15 }}
+          variants={containerStagger(0.1, 0)}
+          className="w-full pt-4 sm:pt-6 overflow-hidden"
+        >
+          {/* Centered Heading */}
+          <motion.div
+            variants={sectionRevealVariants}
+            className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-6"
+          >
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-[#16241B] tracking-tight">
+              Online Pet Pharmacy for All Your Pet's <span className="text-[#EF7C3C]">Health Needs</span>
+            </h1>
+          </motion.div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.12]">
-                Healthy Pets,{' '}
-                <span className="text-[#009E66]">Happier Lives.</span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                Quality medicines, nutrient-dense nutrition, and wellness essentials curated for your furry companions.
-              </p>
-
-              {/* Action & Search */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <a
-                  href="#popular-products"
-                  className="px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-lg shadow-[#009E66]/25 transition-all active:scale-95 flex items-center gap-2 text-sm sm:text-base cursor-pointer"
-                >
-                  Explore Pharmacy
-                </a>
-              </div>
-            </motion.div>
-
-            {/* Right Column: Hero Image with Soft Parallax */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-              className="lg:col-span-7 relative flex justify-center items-center lg:-translate-x-6 xl:-translate-x-10"
-            >
-              <div className="relative w-full max-w-[700px] lg:max-w-[900px] xl:max-w-[1050px] overflow-visible py-4 sm:py-6">
-                <img
-                  src={getCloudinaryImageUrl('pharmacy_hero')}
-                  alt="Pet Pharmacy Essentials"
-                  className="w-full h-auto object-contain drop-shadow-2xl pointer-events-none transition-transform duration-500 hover:scale-[1.02]"
-                />
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* 3. Products Catalog Section */}
-        <section id="popular-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          {/* Section Header with Live Search & Filter Toggle */}
-          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4 pb-2 border-b border-[#16241B]/8">
-            <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 text-xs font-black text-[#EF7C3C] uppercase tracking-wider">
-                <Star className="w-3.5 h-3.5 fill-[#EF7C3C]" />
-                <span>PHARMACY & WELLNESS SHOP</span>
-              </span>
-              <div className="flex items-baseline gap-3">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                  Loved by <span className="text-[#009E66]">Pets,</span> Trusted by Vets<span className="text-[#EF7C3C]">.</span>
-                </h2>
-                <span className="text-xs font-bold text-[#16241B]/50">
-                  (<Odometer value={filteredProducts.length} /> products)
-                </span>
-              </div>
-            </div>
-
-            {/* Controls: Search + Filter Toggle */}
-            <div className="flex items-center gap-2.5 w-full md:w-auto">
-              <SearchBar
-                products={products}
-                onSelectProduct={(product) => setQuickViewProduct(product)}
-                onSearchSubmit={(q) => setSearchQuery(q)}
-                className="w-full md:w-auto"
-              />
-
-              <button
-                type="button"
-                onClick={() => setShowFiltersPanel((prev) => !prev)}
-                className={`p-2.5 sm:px-4 sm:py-2.5 rounded-2xl border font-bold text-xs sm:text-sm flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-                  showFiltersPanel || activeFiltersCount > 0
-                    ? 'bg-[#009E66] text-white border-[#009E66] shadow-md'
-                    : 'bg-white/90 border-[#16241B]/10 text-[#16241B] hover:border-[#009E66]'
-                }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                <span className="hidden sm:inline">Filters</span>
-                {activeFiltersCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-white text-[#009E66] text-xs font-black flex items-center justify-center">
-                    {activeFiltersCount}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Sliding Category Tabs with Shared layoutId Pill */}
-          <div className="relative flex items-center gap-2 w-full py-1.5 overflow-x-auto no-scrollbar scroll-smooth">
-            {pharmacyCategoryTabs.map((tab) => {
-              const TabIcon = tab.icon;
-              const isSelected = activeCategoryFilter === tab.name;
-
-              return (
-                <button
-                  key={tab.name}
-                  onClick={() => setActiveCategoryFilter(tab.name)}
-                  className={`relative inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 ${
-                    isSelected ? 'text-white' : 'text-[#16241B]/70 hover:text-[#16241B]'
-                  }`}
-                >
-                  {/* Sliding layoutId Pill Indicator */}
-                  {isSelected && (
-                    <motion.div
-                      layoutId="pharmacyCategoryPill"
-                      className="absolute inset-0 bg-[#009E66] rounded-full shadow-md z-[-1]"
-                      transition={springs.snappy}
-                    />
-                  )}
-
-                  {!isSelected && (
-                    <div className="absolute inset-0 bg-white/80 border border-[#16241B]/8 rounded-full z-[-1] hover:border-[#009E66]/30 shadow-2xs" />
-                  )}
-
-                  <TabIcon className="w-3.5 h-3.5" />
-                  <span>{tab.name}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Expandable Secondary Filter Drawer */}
-          <AnimatePresence>
-            {showFiltersPanel && (
+          {/* Banner Carousel with Side Previews & Floating Offset Arrows */}
+          <motion.div
+            variants={sectionRevealVariants}
+            onMouseEnter={() => setIsBannerHovered(true)}
+            onMouseLeave={() => setIsBannerHovered(false)}
+            className="relative w-full max-w-[1440px] mx-auto px-3 sm:px-12 md:px-16"
+          >
+            <div className="overflow-hidden rounded-2xl sm:rounded-3xl">
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={springs.soft}
-                className="overflow-hidden"
+                className="flex transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${currentBannerIndex * 100}%)` }}
               >
-                <div className="glass-surface rounded-2xl p-5 border border-[#16241B]/10 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                  {/* Price Slider with Follower Tooltip */}
-                  <div>
-                    <div className="flex items-center justify-between text-xs font-bold mb-2">
-                      <span className="text-[#16241B]/70">Max Price:</span>
-                      <span className="text-[#009E66] font-black">{formatCurrency(maxPrice)}</span>
-                    </div>
-                    <div className="relative flex items-center">
-                      <input
-                        type="range"
-                        min="100"
-                        max="5000"
-                        step="50"
-                        value={maxPrice}
-                        onChange={(e) => setMaxPrice(Number(e.target.value))}
-                        className="w-full h-2 bg-[#16241B]/10 rounded-lg appearance-none cursor-pointer accent-[#009E66]"
+                {banners.map((banner) => (
+                  <div key={banner.id} className="w-full shrink-0 px-1">
+                    <Link
+                      to={banner.link}
+                      className="group block relative w-full aspect-[16/7] sm:aspect-[21/9] md:aspect-[2.35/1] max-h-[420px] rounded-2xl sm:rounded-3xl overflow-hidden border border-[#CBDAC6]/60 shadow-sm hover:shadow-md transition-all bg-[#F3EFE6]"
+                    >
+                      <img
+                        src={banner.image}
+                        alt={banner.label}
+                        className="w-full h-full object-cover object-center select-none"
+                      />
+                    </Link>
+                  </div>
+                ))}
+              </motion.div>
+            </div>
+
+            {/* Slider Navigation Arrows - Floating cleanly outside the image */}
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentBannerIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1))
+              }
+              aria-label="Previous Slide"
+              className="absolute left-0 sm:left-2 md:left-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white hover:bg-[#F8F6F0] text-[#009E66] hover:text-[#008756] shadow-md hover:shadow-lg border border-[#CBDAC6] flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer z-20 active:scale-95"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setCurrentBannerIndex((prev) => (prev === banners.length - 1 ? 0 : prev + 1))
+              }
+              aria-label="Next Slide"
+              className="absolute right-0 sm:right-2 md:right-3 top-1/2 -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white hover:bg-[#F8F6F0] text-[#009E66] hover:text-[#008756] shadow-md hover:shadow-lg border border-[#CBDAC6] flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer z-20 active:scale-95"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* Centered Pagination Indicator Pill */}
+            <div className="flex justify-center mt-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/95 border border-[#CBDAC6] shadow-xs">
+                {banners.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setCurrentBannerIndex(i)}
+                    aria-label={`Go to slide ${i + 1}`}
+                    className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                      currentBannerIndex === i
+                        ? 'w-6 bg-[#009E66]'
+                        : 'w-2 bg-[#CBDAC6] hover:bg-[#88998C]'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </motion.section>
+
+        {/* =========================================================================
+            TASK 2 — "EXPLORE OUR PET PHARMACY CATEGORIES"
+            ========================================================================= */}
+        <motion.section
+          id="categories"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.12 }}
+          variants={containerStagger(0.08, 0.05)}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8"
+        >
+          <motion.div
+            variants={sectionRevealVariants}
+            className="text-center max-w-3xl mx-auto space-y-2"
+          >
+            <h2 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight">
+              Explore Our <span className="text-[#EF7C3C]">Pet Pharmacy</span> Categories
+            </h2>
+            <p className="text-xs sm:text-sm text-[#556658] font-medium max-w-xl mx-auto">
+              Find trusted medications and supplements tailored to meet the unique needs of your dog or cat.
+            </p>
+          </motion.div>
+
+          {/* 5-Column Compact Organic Category Cards Row */}
+          <motion.div
+            variants={containerStagger(0.07, 0.1)}
+            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 sm:gap-6 justify-center items-start"
+          >
+            {PHARMACY_CATEGORIES.map((category) => (
+              <motion.div
+                key={category.slug}
+                variants={itemFadeUp}
+                className="flex justify-center"
+              >
+                <Link
+                  to={`/pharmacy/${category.slug}`}
+                  className="group flex flex-col items-center text-center w-full max-w-[210px] transition-transform duration-300 hover:-translate-y-1.5 cursor-pointer"
+                >
+                  {/* Soft Organic Card Shape with Generated Category Image */}
+                  <div className="relative w-full aspect-[4/5] rounded-[30px] overflow-hidden p-2.5 flex items-center justify-center bg-white border border-[#CBDAC6]/60 shadow-2xs group-hover:shadow-md group-hover:border-[#009E66]/50 transition-all duration-300">
+                    {/* Organic Pastel Background Tint */}
+                    <div
+                      className={`absolute inset-2 rounded-[22px] ${category.color.bg} opacity-90 group-hover:opacity-100 transition-opacity`}
+                    />
+
+                    {/* Centered Image */}
+                    <div className="relative z-10 w-[90%] h-[90%] rounded-xl overflow-hidden shadow-2xs">
+                      <img
+                        src={category.imageUrl}
+                        alt={`${category.name} category`}
+                        className="w-full h-full object-cover rounded-xl"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&auto=format&fit=crop&q=80';
+                        }}
                       />
                     </div>
                   </div>
 
-                  {/* Prescription Toggle */}
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setPrescriptionOnly((p) => !p)}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
-                        prescriptionOnly
-                          ? 'bg-[#EF7C3C] text-white border-[#EF7C3C] shadow-sm'
-                          : 'bg-white text-[#16241B]/80 border-[#16241B]/10 hover:border-[#EF7C3C]'
-                      }`}
-                    >
-                      <ShieldCheck className="w-4 h-4" />
-                      <span>Prescription Only (Rx)</span>
-                    </button>
+                  {/* Category Title & Tagline */}
+                  <div className="mt-3.5 space-y-1 px-1">
+                    <h3 className="text-sm sm:text-base font-black text-[#16241B] group-hover:text-[#009E66] transition-colors leading-snug">
+                      {category.name}
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#556658] font-normal leading-relaxed line-clamp-2">
+                      {category.tagline}
+                    </p>
                   </div>
-
-                  {/* Reset All Filters */}
-                  <div className="flex justify-start md:justify-end">
-                    <button
-                      type="button"
-                      onClick={resetFilters}
-                      className="px-4 py-2 text-xs font-bold text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                      <span>Clear All Filters</span>
-                    </button>
-                  </div>
-                </div>
+                </Link>
               </motion.div>
-            )}
-          </AnimatePresence>
+            ))}
+          </motion.div>
+        </motion.section>
 
-          {/* Active Filter Chips */}
-          <AnimatePresence>
-            {activeFiltersCount > 0 && (
+        {/* =========================================================================
+            TASK 3 — "ADDRESSING YOUR PET'S HEALTH CONCERNS"
+            ========================================================================= */}
+        <motion.section
+          id="health-concerns"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.12 }}
+          variants={containerStagger(0.06, 0.05)}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10"
+        >
+          <motion.div
+            variants={sectionRevealVariants}
+            className="text-center max-w-3xl mx-auto space-y-2"
+          >
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
+              Addressing Your Pet's <span className="text-[#EF7C3C]">Health Concerns</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-[#556658] font-medium max-w-xl mx-auto">
+              Expert Guidance and Quality Products to Help Manage Your Pet's Health Concerns for a Happier Life.
+            </p>
+          </motion.div>
+
+          {/* Grid of 8 Health Concern Cards (4 cols x 2 rows) */}
+          <motion.div
+            variants={containerStagger(0.06, 0.1)}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8"
+          >
+            {HEALTH_CONCERNS.map((concern) => (
               <motion.div
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="flex flex-wrap items-center gap-2 pt-1"
+                key={concern.id}
+                variants={itemFadeUp}
+                whileHover={{ y: -5 }}
+                transition={springs.snappy}
+                className="flex justify-center"
               >
-                <span className="text-xs font-semibold text-[#16241B]/50 mr-1">Active:</span>
-
-                {activeCategoryFilter !== 'All' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#009E66]/30 text-[#009E66] shadow-2xs">
-                    Category: {activeCategoryFilter}
-                    <button
-                      type="button"
-                      onClick={() => setActiveCategoryFilter('All')}
-                      className="hover:text-red-500 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-
-                {searchQuery && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#009E66]/30 text-[#009E66] shadow-2xs">
-                    Search: "{searchQuery}"
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="hover:text-red-500 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-
-                {maxPrice < 5000 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#009E66]/30 text-[#009E66] shadow-2xs">
-                    Up to {formatCurrency(maxPrice)}
-                    <button
-                      type="button"
-                      onClick={() => setMaxPrice(5000)}
-                      className="hover:text-red-500 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-
-                {prescriptionOnly && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#EF7C3C]/30 text-[#EF7C3C] shadow-2xs">
-                    Rx Required
-                    <button
-                      type="button"
-                      onClick={() => setPrescriptionOnly(false)}
-                      className="hover:text-red-500 cursor-pointer"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </span>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Product Grid with Layout Animations & Skeletons */}
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-[22px] p-4 border border-[#16241B]/8 space-y-3.5 shadow-sm"
+                <Link
+                  to={`/pharmacy/concern/${concern.slug}`}
+                  className="group flex flex-col items-center text-center w-full max-w-[290px] cursor-pointer"
                 >
-                  <div className="w-full aspect-square skeleton-shimmer rounded-2xl" />
-                  <div className="h-4 w-1/3 skeleton-shimmer rounded-md" />
-                  <div className="h-5 w-3/4 skeleton-shimmer rounded-md" />
-                  <div className="h-4 w-1/2 skeleton-shimmer rounded-md" />
-                  <div className="h-9 w-full skeleton-shimmer rounded-xl" />
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <ErrorState message={error} onRetry={fetchProducts} />
-          ) : filteredProducts.length === 0 ? (
-            <EmptyState
-              title="No products match your filters"
-              description="Try clearing your search keyword or expanding your price range."
-              actionLabel="Reset All Filters"
-              onAction={resetFilters}
-            />
-          ) : (
-            <motion.div
-              layout
-              variants={staggerContainer(0.05)}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 sm:gap-6"
+                  {/* Rounded Image Container */}
+                  <div className="relative w-full aspect-square rounded-[28px] sm:rounded-[32px] overflow-hidden bg-white border border-[#CBDAC6]/60 shadow-xs group-hover:shadow-md group-hover:border-[#009E66]/50 transition-all duration-300 mb-4 p-2 sm:p-2.5">
+                    <div className="w-full h-full rounded-[22px] sm:rounded-[24px] overflow-hidden bg-[#F6F7F2]">
+                      <img
+                        src={concern.imageUrl}
+                        alt={`${concern.title} health concern`}
+                        className="w-full h-full object-cover rounded-[20px]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=400&auto=format&fit=crop&q=80';
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Concern Title & Exact Tagline */}
+                  <div className="space-y-1.5 px-2">
+                    <h3 className="text-base sm:text-lg font-black text-[#16241B] group-hover:text-[#009E66] transition-colors leading-snug">
+                      {concern.title}
+                    </h3>
+                    <p className="text-xs text-[#556658] font-normal leading-relaxed max-w-[260px]">
+                      {concern.tagline}
+                    </p>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </motion.div>
+        </motion.section>
+
+        {/* =========================================================================
+            TASK 4 — "MOST PURCHASED MEDICINES"
+            ========================================================================= */}
+        <motion.section
+          id="most-purchased"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.12 }}
+          variants={containerStagger(0.08, 0.05)}
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-10"
+        >
+          {/* Centered Heading & Subtitle */}
+          <motion.div
+            variants={sectionRevealVariants}
+            className="text-center max-w-3xl mx-auto space-y-2"
+          >
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
+              Most Purchased <span className="text-[#EF7C3C]">Medicines</span>
+            </h2>
+            <p className="text-xs sm:text-sm text-[#556658] font-medium max-w-xl mx-auto">
+              Promote your pet’s digestive & overall health with the most trusted medications.
+            </p>
+          </motion.div>
+
+          {/* Product Carousel with Side Floating Arrows (Offset outside the cards) */}
+          <motion.div variants={sectionRevealVariants} className="relative w-full px-2 sm:px-12 md:px-14">
+            {/* Left Chevron Arrow - Floats cleanly in outer margin without overlapping card */}
+            <button
+              type="button"
+              onClick={() => scrollCarousel('left')}
+              aria-label="Previous Products"
+              className="absolute left-0 sm:left-1 md:left-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white hover:bg-[#F8F6F0] text-[#3FA65C] hover:text-[#2D5A38] shadow-md hover:shadow-lg border border-[#CBDAC6] flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer active:scale-95"
             >
-              <AnimatePresence mode="popLayout">
-                {filteredProducts.map((product) => {
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* Right Chevron Arrow - Floats cleanly in outer margin without overlapping card */}
+            <button
+              type="button"
+              onClick={() => scrollCarousel('right')}
+              aria-label="Next Products"
+              className="absolute right-0 sm:right-1 md:right-2 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white hover:bg-[#F8F6F0] text-[#3FA65C] hover:text-[#2D5A38] shadow-md hover:shadow-lg border border-[#CBDAC6] flex items-center justify-center transition-all duration-200 hover:scale-105 cursor-pointer active:scale-95"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* Product Cards Row */}
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-[#FAF7F0] rounded-[24px] p-4 sm:p-5 border border-[#EDE7D9] space-y-3.5 shadow-2xs"
+                  >
+                    <div className="w-full aspect-square skeleton-shimmer rounded-2xl" />
+                    <div className="h-4 w-3/4 skeleton-shimmer rounded-md" />
+                    <div className="h-5 w-1/3 skeleton-shimmer rounded-md" />
+                    <div className="h-10 w-full skeleton-shimmer rounded-xl" />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <ErrorState message={error} onRetry={refetch} />
+            ) : (
+              <div
+                ref={carouselRef}
+                className="flex gap-5 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-3 px-1"
+              >
+                {medicationProducts.slice(0, 10).map((product) => {
                   const cartItem = cartItems.find((i) => i.productId === product.id);
+                  const isItemSaved = isSaved('PRODUCT', product.id);
 
                   return (
-                    <motion.div
-                      layout
+                    <div
                       key={product.id}
-                      variants={fadeUp}
-                      initial="hidden"
-                      animate="visible"
-                      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-                      className="h-full flex flex-col"
+                      className="w-[280px] sm:w-[300px] shrink-0 snap-start flex flex-col h-full"
                     >
                       <ProductCard
                         product={product}
-                        isSaved={isSaved('PRODUCT', product.id)}
+                        isSaved={isItemSaved}
                         onQuickView={(p) => setQuickViewProduct(p)}
                         onAddToCart={(p, e) => addToCart(p, e)}
                         isAddingToCart={isUpdating[product.id]}
                         quantityInCart={cartItem?.quantity || 0}
                       />
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </motion.div>
-          )}
-        </section>
-
-        {/* 4. Smart Recommendations Section */}
-        {products.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <RecommendationCarousel
-              products={products.slice(0, 8)}
-              onQuickView={(p) => setQuickViewProduct(p)}
-              onAddToCart={(p, e) => addToCart(p, e)}
-            />
-          </div>
-        )}
-
-        {/* 5. Special Care Section */}
-        <section id="special-care" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 lg:p-12 border border-[#E2EEDB] shadow-sm">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-              {/* Left Column: Heading & Info */}
-              <div className="lg:col-span-5 space-y-4 text-center lg:text-left">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white text-[#287A41] text-xs font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                  <Shield className="w-3.5 h-3.5 text-[#287A41]" />
-                  <span>Stay Prepared</span>
-                </span>
-
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight leading-tight">
-                  Special Care for<br className="hidden sm:inline" /> Their{' '}
-                  <span className="text-[#009E66]">Special Needs</span>.
-                </h2>
-
-                <p className="text-sm sm:text-base text-[#556658] font-medium leading-relaxed max-w-md">
-                  Explore our verified range of medicines and wellness products for every stage of your pet's life.
-                </p>
-              </div>
-
-              {/* Right Column: 2x2 Cards Grid */}
-              <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {specialCareItems.map((item, idx) => {
-                  const ItemIcon = item.icon;
-                  return (
-                    <motion.div
-                      key={idx}
-                      whileHover={{ y: -4 }}
-                      transition={springs.snappy}
-                      className="bg-white rounded-2xl p-5 border border-[#EDE7D9] shadow-xs flex items-center gap-4 hover:shadow-md transition-all cursor-default"
-                    >
-                      <div className="w-12 h-12 rounded-2xl bg-[#E6F9EC] text-[#287A41] flex items-center justify-center shrink-0 shadow-2xs">
-                        <ItemIcon className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-sm sm:text-base font-black text-[#16241B] leading-snug">
-                          {item.title}
-                        </h3>
-                        <p className="text-xs text-[#556658] font-medium mt-0.5">
-                          {item.subtitle}
-                        </p>
-                      </div>
-                    </motion.div>
+                    </div>
                   );
                 })}
               </div>
-            </div>
-          </div>
-        </section>
-        {/* 6. CTA Banner */}
-        <section id="cta" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-          <div className="bg-[#FFCA28] rounded-[36px] px-6 sm:px-10 lg:px-12 py-6 sm:py-8 relative overflow-visible shadow-[0_20px_50px_rgba(255,202,40,0.28)] border border-[#F5C222]">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-6 items-center">
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
-                <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/80 text-[#16241B] text-xs font-black uppercase tracking-wider shadow-2xs">
-                  <span>Healthy Pets. Happy Homes.</span>
-                </div>
-
-                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#16241B] tracking-tight leading-[1.15]">
-                  Because They Deserve the{' '}
-                  <span
-                    className="text-[#EF7C3C]"
-                    style={{ WebkitTextStroke: '0.75px #16241B' }}
-                  >
-                    Best Care
-                  </span>
-                  .
-                </h2>
-
-                <p className="text-base sm:text-lg text-[#3E3A1A] max-w-xl font-medium leading-relaxed">
-                  Shop now for premium pet medicines, supplements and essentials!
-                </p>
-
-                <div className="pt-2">
-                  <a
-                    href="#popular-products"
-                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#009E66] hover:bg-[#008757] text-white font-black rounded-full shadow-md transition-all text-sm sm:text-base cursor-pointer active:scale-95"
-                  >
-                    Shop Now
-                  </a>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 flex justify-center items-center relative z-20 overflow-visible">
-                <div className="relative w-full max-w-[250px] sm:max-w-[270px] h-[250px] sm:h-[270px] flex justify-center items-center overflow-visible">
-                  <img
-                    src={getCloudinaryImageUrl('pharmacy_cta')}
-                    alt="Pet Pharmacy Essentials"
-                    className="relative z-10 w-[118%] max-w-[280px] h-auto object-contain -mt-14 -mb-2 pointer-events-none drop-shadow-md"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+            )}
+          </motion.div>
+        </motion.section>
       </main>
 
-      {/* Quick View Shared-Element Modal */}
+      {/* Product Detail Modal */}
       {quickViewProduct && (
-        <QuickViewModal
+        <ProductDetailModal
           product={quickViewProduct}
           onClose={() => setQuickViewProduct(null)}
           isSaved={isSaved('PRODUCT', quickViewProduct.id)}

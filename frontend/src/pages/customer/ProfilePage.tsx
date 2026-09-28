@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Navbar } from '../../components/layout/Navbar';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
@@ -40,6 +41,7 @@ import {
   FileText,
   BookOpen,
   Sparkles,
+  ChevronRight,
 } from 'lucide-react';
 
 interface PetItem {
@@ -315,12 +317,13 @@ export const ProfilePage: React.FC = () => {
 
   const handleRemovePetConfirm = async (id: number) => {
     setPetDeleting(true);
+    setPets((prev) => prev.filter((p) => p.id !== id));
+    setPetToDelete(null);
     try {
       await apiClient.delete(`/customer/pets/${id}`);
-      setPets((prev) => prev.filter((p) => p.id !== id));
-      setPetToDelete(null);
       showToast('Pet removed from profile.');
     } catch (err: unknown) {
+      fetchPets();
       const msg = err instanceof Error ? err.message : 'Failed to remove pet.';
       showToast(msg, 'error');
     } finally {
@@ -395,7 +398,7 @@ export const ProfilePage: React.FC = () => {
   const [selectedVetId, setSelectedVetId] = useState<number | null>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<number | null>(null);
   const [selectedPetId, setSelectedPetId] = useState<number | null>(null);
-  const [bookingDate, setBookingDate] = useState(
+  const [bookingDate, setBookingDate] = useState(() =>
     new Date(Date.now() + 86400000).toISOString().split('T')[0]
   );
   const [bookingTime, setBookingTime] = useState('10:00 AM');
@@ -609,12 +612,13 @@ export const ProfilePage: React.FC = () => {
   };
 
   const handleDeleteNotification = async (id: number) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
     try {
       await apiClient.delete(`/customer/notifications/${id}`);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
       showToast('Notification removed.');
       window.dispatchEvent(new Event('notifications-updated'));
     } catch {
+      fetchNotifications();
       showToast('Failed to delete notification.', 'error');
     }
   };
@@ -854,33 +858,37 @@ export const ProfilePage: React.FC = () => {
       handleRemoveCartItem(itemId);
       return;
     }
+    setCartItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, quantity: newQty } : item)));
     try {
       const res = await apiClient.put<CartItemData>(`/customer/cart/${itemId}?quantity=${newQty}`);
       setCartItems((prev) => prev.map((item) => (item.id === itemId ? res.data : item)));
       window.dispatchEvent(new Event('cart-updated'));
     } catch {
+      fetchCartItems();
       showToast('Failed to update quantity.', 'error');
     }
   };
 
   const handleRemoveCartItem = async (itemId: number) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== itemId));
     try {
       await apiClient.delete(`/customer/cart/${itemId}`);
-      setCartItems((prev) => prev.filter((item) => item.id !== itemId));
       showToast('Item removed from cart.');
       window.dispatchEvent(new Event('cart-updated'));
     } catch {
+      fetchCartItems();
       showToast('Failed to remove item.', 'error');
     }
   };
 
   const handleClearCart = async () => {
+    setCartItems([]);
     try {
       await apiClient.delete('/customer/cart');
-      setCartItems([]);
       showToast('Cart cleared.');
       window.dispatchEvent(new Event('cart-updated'));
     } catch {
+      fetchCartItems();
       showToast('Failed to clear cart.', 'error');
     }
   };
@@ -920,7 +928,7 @@ export const ProfilePage: React.FC = () => {
     if (!status) return 'bg-[#F3F4F6] text-[#4B5563] border-[#E5E7EB]';
     const s = status.toUpperCase();
     if (s === 'DELIVERED' || s === 'COMPLETED') {
-      return 'bg-[#E6F9EC] text-[#287A41] border-[#C3ECD0]';
+      return 'bg-[#E6F9EC] text-[#009E66] border-[#C3ECD0]';
     } else if (s === 'READY_FOR_PICKUP' || s === 'SHIPPED' || s === 'PROCESSING') {
       return 'bg-[#FFF0E6] text-[#EF7C3C] border-[#FED7AA]';
     } else if (s === 'PLACED') {
@@ -934,7 +942,7 @@ export const ProfilePage: React.FC = () => {
   const getAptStatusBadge = (status: AppointmentItem['status']) => {
     switch (status) {
       case 'CONFIRMED':
-        return 'bg-[#E6F9EC] text-[#287A41] border-[#C3ECD0]';
+        return 'bg-[#E6F9EC] text-[#009E66] border-[#C3ECD0]';
       case 'PENDING':
         return 'bg-[#FEF9C3] text-[#B45309] border-[#FDE047]';
       case 'COMPLETED':
@@ -1044,10 +1052,10 @@ export const ProfilePage: React.FC = () => {
                     <button
                       key={tab.id}
                       onClick={() => setSearchParams({ tab: tab.id })}
-                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer font-sans ${
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all cursor-pointer font-sans ${
                         isActive
                           ? 'bg-[#009E66] text-white shadow-xs'
-                          : 'text-[#16241B] hover:bg-[#E6F9EC]/50 hover:text-[#009E66]'
+                          : 'text-[#16241B]/85 hover:bg-[#E6F9EC]/50 hover:text-[#009E66]'
                       }`}
                     >
                       <TabIcon className={`w-4.5 h-4.5 ${isActive ? 'text-white' : 'text-[#556658]'}`} />
@@ -1092,10 +1100,10 @@ export const ProfilePage: React.FC = () => {
                     className="bg-[#EFF8F0] border border-[#D5EAD9] hover:border-[#009E66]/50 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md group flex flex-col justify-between min-h-[110px]"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold tracking-wider text-[#287A41] uppercase">
+                      <span className="text-[11px] font-semibold tracking-wider text-[#009E66] uppercase">
                         NEXT APPOINTMENT
                       </span>
-                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#C3ECD0] flex items-center justify-center text-[#287A41] shadow-2xs group-hover:scale-105 transition-transform">
+                      <div className="w-7 h-7 rounded-full bg-white/90 border border-[#C3ECD0] flex items-center justify-center text-[#009E66] shadow-2xs group-hover:scale-105 transition-transform">
                         <Calendar className="w-3.5 h-3.5" />
                       </div>
                     </div>
@@ -1295,7 +1303,7 @@ export const ProfilePage: React.FC = () => {
                           >
                             <div className="space-y-1.5 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[11px] font-semibold border border-[#C3ECD0]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-[11px] font-semibold border border-[#C3ECD0]">
                                   {apt.petName || 'Pet'}
                                 </span>
                                 <span className="text-xs text-[#88998C] font-normal">
@@ -1343,8 +1351,11 @@ export const ProfilePage: React.FC = () => {
                       </p>
                     </div>
                     <button
-                      onClick={() => navigate('/health-tips')}
-                      className="text-xs font-semibold text-[#009E66] hover:text-[#008757] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+                      onClick={() => {
+                        const petSpecies = pets.length > 0 && pets[0].species ? `?petType=${encodeURIComponent(pets[0].species)}` : '';
+                        navigate(`/health-tips/by-pet-type${petSpecies}`);
+                      }}
+                      className="text-xs font-bold text-[#009E66] hover:text-[#EF7C3C] flex items-center gap-1 transition-colors cursor-pointer shrink-0"
                     >
                       <span>View All</span>
                     </button>
@@ -1374,7 +1385,7 @@ export const ProfilePage: React.FC = () => {
                       {recommendedArticles.map((article) => (
                         <div
                           key={article.id}
-                          onClick={() => navigate('/health-tips')}
+                          onClick={() => navigate(`/health-tips/${article.id}`)}
                           className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] hover:border-[#009E66]/40 transition-all cursor-pointer group flex flex-col justify-between shadow-2xs"
                         >
                           <div className="space-y-2">
@@ -1383,14 +1394,14 @@ export const ProfilePage: React.FC = () => {
                                 <img
                                   src={getArticleImageUrl(article.title, article.imageUrl)}
                                   alt={article.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  className="w-full h-full object-cover"
                                 />
                               </div>
                             )}
 
                             <div className="flex items-center gap-2">
                               {article.petType && (
-                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#287A41] text-[10px] font-semibold uppercase border border-[#C3ECD0]">
+                                <span className="px-2.5 py-0.5 rounded-full bg-[#E6F9EC] text-[#009E66] text-[10px] font-semibold uppercase border border-[#CBDAC6]">
                                   {article.petType}
                                 </span>
                               )}
@@ -1412,8 +1423,9 @@ export const ProfilePage: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-semibold text-[#009E66]">
+                          <div className="pt-3 border-t border-[#EAE3D4] mt-3 flex items-center justify-between text-xs font-semibold text-[#009E66] group-hover:text-[#EF7C3C] transition-colors">
                             <span>Read Article</span>
+                            <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                           </div>
                         </div>
                       ))}
@@ -1463,86 +1475,109 @@ export const ProfilePage: React.FC = () => {
                     icon={ShoppingBag}
                     title="Your Cart is Empty"
                     description="Browse our verified pet pharmacy for food, toys, supplements, and health essentials."
-                    actionLabel="Shop Pet Pharmacy"
-                    actionLink="/pharmacy"
+                    actionLabel="Pharmacy"
+                    actionLink="/pharmacy#popular-products"
+                    secondaryActionLabel="Paw Store"
+                    secondaryActionLink="/pet-essentials"
                   />
                 )}
 
                 {!cartLoading && !cartError && cartItems.length > 0 && (
                   <div className="space-y-6">
                     <div className="space-y-3.5 max-h-[480px] overflow-y-auto pr-1">
-                      {cartItems.map((item) => {
-                        const itemTotal = (item.price || 0) * (item.quantity || 1);
-                        const thumbUrl = getProductImageUrl(item.productName, item.imageUrl, item.productId);
-                        return (
-                          <div
-                            key={item.id}
-                            className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all hover:border-[#D5CCBA]"
-                          >
-                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                              <img
-                                src={thumbUrl}
-                                alt={item.productName}
-                                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white object-contain p-2 border border-[#EAE3D4] shadow-2xs shrink-0"
-                              />
-                              <div className="min-w-0">
-                                <h3 className="text-sm sm:text-base font-bold text-[#16241B] line-clamp-1">
-                                  {item.productName}
-                                </h3>
-                                <p className="text-xs font-semibold text-[#009E66] mt-0.5">
-                                  ₹{item.price ? item.price.toLocaleString('en-IN') : '0'}{' '}
-                                  <span className="text-[11px] text-[#88998C] font-normal">/ unit</span>
-                                </p>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3FA65C] bg-[#E6F9EC] px-2 py-0.5 rounded-md mt-1.5">
-                                  Free In-Store Pickup
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#EAE3D4]/60">
-                              <div className="flex items-center gap-1.5 bg-white border border-[#EAE3D4] rounded-xl p-1 shadow-2xs">
-                                <button
-                                  type="button"
-                                  onClick={() => handleUpdateCartQuantity(item.id, item.quantity - 1)}
-                                  aria-label="Decrease quantity"
-                                  className="w-7 h-7 rounded-lg bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] hover:text-[#009E66] flex items-center justify-center cursor-pointer transition-colors active:scale-90"
-                                >
-                                  {item.quantity <= 1 ? (
-                                    <Trash2 className="w-3.5 h-3.5 text-red-500" />
-                                  ) : (
-                                    <Minus className="w-3.5 h-3.5" />
-                                  )}
-                                </button>
-                                <span className="text-xs font-black text-[#16241B] px-2 min-w-[20px] text-center select-none">
-                                  {item.quantity}
-                                </span>
-                                <button
-                                  type="button"
-                                  disabled={item.stockQuantity ? item.quantity >= item.stockQuantity : false}
-                                  onClick={() => handleUpdateCartQuantity(item.id, item.quantity + 1)}
-                                  aria-label="Increase quantity"
-                                  className="w-7 h-7 rounded-lg bg-[#F8F6F0] hover:bg-[#E6F9EC] disabled:opacity-40 text-[#16241B] hover:text-[#009E66] flex items-center justify-center cursor-pointer transition-colors active:scale-90"
-                                >
-                                  <Plus className="w-3.5 h-3.5" />
-                                </button>
+                      <AnimatePresence mode="popLayout" initial={false}>
+                        {cartItems.map((item) => {
+                          const itemTotal = (item.price || 0) * (item.quantity || 1);
+                          const thumbUrl = getProductImageUrl(item.productName, item.imageUrl, item.productId);
+                          return (
+                            <motion.div
+                              key={item.id}
+                              layout
+                              initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{
+                                opacity: 0,
+                                x: -50,
+                                scale: 0.92,
+                                height: 0,
+                                marginBottom: 0,
+                                paddingTop: 0,
+                                paddingBottom: 0,
+                                borderWidth: 0,
+                                overflow: 'hidden',
+                                transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+                              }}
+                              transition={{
+                                layout: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+                                opacity: { duration: 0.2 },
+                              }}
+                              className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors hover:border-[#D5CCBA]"
+                            >
+                              <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                                <img
+                                  src={thumbUrl}
+                                  alt={item.productName}
+                                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white object-contain p-2 border border-[#EAE3D4] shadow-2xs shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <h3 className="text-sm sm:text-base font-bold text-[#16241B] line-clamp-1">
+                                    {item.productName}
+                                  </h3>
+                                  <p className="text-xs font-semibold text-[#009E66] mt-0.5">
+                                    ₹{item.price ? item.price.toLocaleString('en-IN') : '0'}{' '}
+                                    <span className="text-[11px] text-[#88998C] font-normal">/ unit</span>
+                                  </p>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-[#3FA65C] bg-[#E6F9EC] px-2 py-0.5 rounded-md mt-1.5">
+                                    Free In-Store Pickup
+                                  </span>
+                                </div>
                               </div>
 
-                              <span className="text-sm sm:text-base font-black text-[#16241B] min-w-[75px] text-right">
-                                ₹{itemTotal.toLocaleString('en-IN')}
-                              </span>
+                              <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-5 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-[#EAE3D4]/60">
+                                <div className="flex items-center gap-1.5 bg-white border border-[#EAE3D4] rounded-xl p-1 shadow-2xs">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateCartQuantity(item.id, item.quantity - 1)}
+                                    aria-label="Decrease quantity"
+                                    className="w-7 h-7 rounded-lg bg-[#F8F6F0] hover:bg-[#E6F9EC] text-[#16241B] hover:text-[#009E66] flex items-center justify-center cursor-pointer transition-colors active:scale-90"
+                                  >
+                                    {item.quantity <= 1 ? (
+                                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                    ) : (
+                                      <Minus className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                  <span className="text-xs font-black text-[#16241B] px-2 min-w-[20px] text-center select-none">
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={item.stockQuantity ? item.quantity >= item.stockQuantity : false}
+                                    onClick={() => handleUpdateCartQuantity(item.id, item.quantity + 1)}
+                                    aria-label="Increase quantity"
+                                    className="w-7 h-7 rounded-lg bg-[#F8F6F0] hover:bg-[#E6F9EC] disabled:opacity-40 text-[#16241B] hover:text-[#009E66] flex items-center justify-center cursor-pointer transition-colors active:scale-90"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
 
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveCartItem(item.id)}
-                                aria-label="Remove item"
-                                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                                <span className="text-sm sm:text-base font-black text-[#16241B] min-w-[75px] text-right">
+                                  ₹{itemTotal.toLocaleString('en-IN')}
+                                </span>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCartItem(item.id)}
+                                  aria-label="Remove item"
+                                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          );
+                        })}
+                      </AnimatePresence>
                     </div>
 
                     {/* Cart Summary Card */}
@@ -1578,13 +1613,22 @@ export const ProfilePage: React.FC = () => {
                             'Proceed to Checkout'
                           )}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/pharmacy')}
-                          className="w-full py-2.5 text-xs font-bold text-[#556658] hover:text-[#009E66] transition-colors text-center cursor-pointer"
-                        >
-                          ← Continue Shopping in Pharmacy
-                        </button>
+                        <div className="flex items-center justify-center gap-3 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => navigate('/pharmacy')}
+                            className="py-1.5 px-3.5 rounded-full bg-[#16241B] hover:bg-[#253d2e] text-white border border-[#16241B] text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1"
+                          >
+                            <span>←</span> <span>Pharmacy</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate('/pet-essentials')}
+                            className="py-1.5 px-3.5 rounded-full bg-white hover:bg-[#16241B] text-[#16241B] hover:text-white border border-[#16241B]/20 hover:border-[#16241B] text-xs font-bold transition-all cursor-pointer shadow-2xs active:scale-95 flex items-center gap-1"
+                          >
+                            <span>Paw Store</span> <span>→</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1645,64 +1689,70 @@ export const ProfilePage: React.FC = () => {
                 {/* State: Pets List */}
                 {!petsLoading && !petsError && pets.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {pets.map((pet) => (
-                      <div
-                        key={pet.id}
-                        className="bg-[#F8F6F0] rounded-2xl p-5 border border-[#EAE3D4] flex items-center justify-between gap-4"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-14 h-14 rounded-full overflow-hidden bg-white border border-[#E5DFCE] shrink-0">
-                            <img
-                              src={getPetSpeciesImage(pet.species, pet.imageUrl)}
-                              alt={`${pet.name} (${pet.species})`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src = getPetSpeciesImage(pet.species);
-                              }}
-                            />
-                          </div>
-                          <div>
-                            <h3 className="text-base font-semibold text-[#16241B]">{pet.name}</h3>
-                            <p className="text-xs text-[#67796B] font-normal">
-                              {pet.breed || pet.species} • {pet.age ?? 0} {(pet.age ?? 0) === 1 ? 'year' : 'years'} old
-                            </p>
-                            {pet.medicalNotes && (
-                              <p className="text-[11px] text-[#88998C] truncate max-w-[150px] mt-0.5 font-normal">
-                                {pet.medicalNotes}
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {pets.map((pet) => (
+                        <motion.div
+                          key={pet.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.25 } }}
+                          className="bg-[#F8F6F0] rounded-2xl p-5 border border-[#EAE3D4] flex items-center justify-between gap-4"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-full overflow-hidden bg-white border border-[#E5DFCE] shrink-0">
+                              <img
+                                src={getPetSpeciesImage(pet.species, pet.imageUrl)}
+                                alt={`${pet.name} (${pet.species})`}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.src = getPetSpeciesImage(pet.species);
+                                }}
+                              />
+                            </div>
+                            <div>
+                              <h3 className="text-base font-semibold text-[#16241B]">{pet.name}</h3>
+                              <p className="text-xs text-[#67796B] font-normal">
+                                {pet.breed || pet.species} • {pet.age ?? 0} {(pet.age ?? 0) === 1 ? 'year' : 'years'} old
                               </p>
-                            )}
+                              {pet.medicalNotes && (
+                                <p className="text-[11px] text-[#88998C] truncate max-w-[150px] mt-0.5 font-normal">
+                                  {pet.medicalNotes}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
 
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => {
-                              setEditingPetId(pet.id);
-                              setPetFormData({
-                                name: pet.name,
-                                species: pet.species,
-                                breed: pet.breed || '',
-                                age: pet.age || 1,
-                                medicalNotes: pet.medicalNotes || '',
-                              });
-                              setIsAddPetModalOpen(true);
-                            }}
-                            aria-label="Edit pet"
-                            className="p-2 rounded-full hover:bg-white text-[#67796B] hover:text-[#548B60] transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => {
+                                setEditingPetId(pet.id);
+                                setPetFormData({
+                                  name: pet.name,
+                                  species: pet.species,
+                                  breed: pet.breed || '',
+                                  age: pet.age || 1,
+                                  medicalNotes: pet.medicalNotes || '',
+                                });
+                                setIsAddPetModalOpen(true);
+                              }}
+                              aria-label="Edit pet"
+                              className="p-2 rounded-full hover:bg-white text-[#67796B] hover:text-[#548B60] transition-colors cursor-pointer"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
 
-                          <button
-                            onClick={() => setPetToDelete(pet.id)}
-                            aria-label="Remove pet"
-                            className="p-2 rounded-full hover:bg-white text-[#67796B] hover:text-red-500 transition-colors cursor-pointer"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                            <button
+                              onClick={() => setPetToDelete(pet.id)}
+                              aria-label="Remove pet"
+                              className="p-2 rounded-full hover:bg-white text-[#67796B] hover:text-red-500 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
 
@@ -1893,8 +1943,10 @@ export const ProfilePage: React.FC = () => {
                     icon={ShoppingBag}
                     title="No Orders Found"
                     description="Explore our curated pet pharmacy and supply store to get premium supplements, food, and medications."
-                    actionLabel="Shop Pharmacy"
-                    actionLink="/pharmacy"
+                    actionLabel="Pharmacy"
+                    actionLink="/pharmacy#popular-products"
+                    secondaryActionLabel="Paw Store"
+                    secondaryActionLink="/pet-essentials"
                   />
                 )}
 
@@ -2178,7 +2230,7 @@ export const ProfilePage: React.FC = () => {
                               {/* Clinical Medical Record (if added by Doctor/Admin) */}
                               {(apt.diagnosis || apt.prescription || apt.notes) && (
                                 <div className="pt-3 border-t border-[#F2ECE0] bg-[#FBF9F4] p-3 rounded-xl space-y-2 text-left">
-                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#287A41]">
+                                  <div className="flex items-center gap-1.5 text-xs font-semibold text-[#009E66]">
                                     <FileText className="w-3.5 h-3.5" />
                                     <span>Medical Record</span>
                                   </div>
@@ -2429,7 +2481,7 @@ export const ProfilePage: React.FC = () => {
                         {selectedVetId && (
                           <div className="p-3 bg-[#EFF8F0] border border-[#D5EAD9] rounded-xl flex items-center justify-between text-xs font-medium text-[#16241B]">
                             <span>Consultation Fee:</span>
-                            <span className="text-sm font-semibold text-[#287A41]">
+                            <span className="text-sm font-semibold text-[#009E66]">
                               {formatCurrency(vetsList.find((v) => v.id === selectedVetId)?.consultationFee ?? 50)}
                             </span>
                           </div>
@@ -2478,60 +2530,75 @@ export const ProfilePage: React.FC = () => {
                   />
                 ) : (
                   <div className="space-y-3">
-                    {notifications.map((n) => {
-                      const getIcon = () => {
-                        if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#287A41]" />;
-                        if (n.type === 'APPOINTMENT_REJECTED') return <AlertCircle className="w-5 h-5 text-[#DC2626]" />;
-                        if (n.type === 'NEW_VET') return <Stethoscope className="w-5 h-5 text-[#0284C7]" />;
-                        if (n.type && n.type.includes('ORDER')) return <ShoppingBag className="w-5 h-5 text-[#009E66]" />;
-                        return <Bell className="w-5 h-5 text-[#EF7C3C]" />;
-                      };
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {notifications.map((n) => {
+                        const getIcon = () => {
+                          if (n.type === 'APPOINTMENT_CONFIRMED') return <CheckCircle2 className="w-5 h-5 text-[#009E66]" />;
+                          if (n.type === 'APPOINTMENT_REJECTED') return <AlertCircle className="w-5 h-5 text-[#DC2626]" />;
+                          if (n.type === 'NEW_VET') return <Stethoscope className="w-5 h-5 text-[#0284C7]" />;
+                          if (n.type && n.type.includes('ORDER')) return <ShoppingBag className="w-5 h-5 text-[#009E66]" />;
+                          return <Bell className="w-5 h-5 text-[#EF7C3C]" />;
+                        };
 
-                      return (
-                        <div
-                          key={n.id}
-                          onClick={() => {
-                            if (!n.isRead) handleMarkAsRead(n.id);
-                          }}
-                          className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-4 cursor-pointer ${
-                            n.isRead
-                              ? 'bg-white border-[#EAE3D4]'
-                              : 'bg-[#FEFCE8] border-[#FEF08A] shadow-xs'
-                          }`}
-                        >
-                          <div className="flex items-start gap-3.5 min-w-0">
-                            <div className="p-2.5 rounded-xl bg-white border border-gray-100 shadow-2xs shrink-0">
-                              {getIcon()}
-                            </div>
-                            <div className="space-y-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-black text-[#16241B]">{n.title}</h4>
-                                {!n.isRead && (
-                                  <span className="w-2 h-2 rounded-full bg-[#009E66] shrink-0" title="Unread" />
-                                )}
-                              </div>
-                              <p className="text-xs text-[#556658] font-medium leading-relaxed">
-                                {n.message}
-                              </p>
-                              <span className="text-[10px] text-[#88998C] font-semibold block pt-0.5">
-                                {getRelativeTimeString(n.createdAt)}
-                              </span>
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteNotification(n.id);
+                        return (
+                          <motion.div
+                            key={n.id}
+                            layout
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{
+                              opacity: 0,
+                              x: -40,
+                              height: 0,
+                              marginBottom: 0,
+                              paddingTop: 0,
+                              paddingBottom: 0,
+                              overflow: 'hidden',
+                              transition: { duration: 0.25 },
                             }}
-                            className="p-1.5 rounded-lg text-[#88998C] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
-                            title="Delete notification"
+                            onClick={() => {
+                              if (!n.isRead) handleMarkAsRead(n.id);
+                            }}
+                            className={`p-4 rounded-2xl border transition-all flex items-start justify-between gap-4 cursor-pointer ${
+                              n.isRead
+                                ? 'bg-white border-[#EAE3D4]'
+                                : 'bg-[#FEFCE8] border-[#FEF08A] shadow-xs'
+                            }`}
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      );
-                    })}
+                            <div className="flex items-start gap-3.5 min-w-0">
+                              <div className="p-2.5 rounded-xl bg-white border border-gray-100 shadow-2xs shrink-0">
+                                {getIcon()}
+                              </div>
+                              <div className="space-y-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <h4 className="text-sm font-black text-[#16241B]">{n.title}</h4>
+                                  {!n.isRead && (
+                                    <span className="w-2 h-2 rounded-full bg-[#009E66] shrink-0" title="Unread" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-[#556658] font-medium leading-relaxed">
+                                  {n.message}
+                                </p>
+                                <span className="text-[10px] text-[#88998C] font-semibold block pt-0.5">
+                                  {getRelativeTimeString(n.createdAt)}
+                                </span>
+                              </div>
+                            </div>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteNotification(n.id);
+                              }}
+                              className="p-1.5 rounded-lg text-[#88998C] hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                              title="Delete notification"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>
@@ -2566,89 +2633,97 @@ export const ProfilePage: React.FC = () => {
                     icon={Heart}
                     title="No Saved Items Yet"
                     description="Tap the heart icon on any pharmacy product or care service to save it to your personal wishlist."
-                    actionLabel="Explore Pharmacy"
-                    actionLink="/pharmacy"
+                    actionLabel="Pharmacy"
+                    actionLink="/pharmacy#popular-products"
+                    secondaryActionLabel="Paw Store"
+                    secondaryActionLink="/pet-essentials"
                   />
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {wishlistItems.map((item) => {
-                      let itemLink = '/pharmacy';
-                      if (item.itemType === 'VET') {
-                        itemLink = `/vets/${item.itemId}`;
-                      } else if (item.itemType === 'SERVICE') {
-                        itemLink = '/services';
-                      }
+                    <AnimatePresence mode="popLayout" initial={false}>
+                      {wishlistItems.map((item) => {
+                        let itemLink = '/pharmacy';
+                        if (item.itemType === 'VET') {
+                          itemLink = `/vets/${item.itemId}`;
+                        } else if (item.itemType === 'SERVICE') {
+                          itemLink = '/services';
+                        }
 
-                      let imageSrc = '';
-                      if (item.itemType === 'PRODUCT') {
-                        imageSrc = getProductImageUrl(item.name, item.imageUrl, item.itemId);
-                      } else if (item.itemType === 'VET') {
-                        imageSrc = getVetImageUrl(item.name, item.imageUrl);
-                      } else if (item.itemType === 'SERVICE') {
-                        imageSrc = getServiceImageUrl(item.name, item.imageUrl, item.itemId);
-                      } else if (item.imageUrl) {
-                        imageSrc = getCloudinaryImageUrl(item.imageUrl);
-                      }
+                        let imageSrc = '';
+                        if (item.itemType === 'PRODUCT') {
+                          imageSrc = getProductImageUrl(item.name, item.imageUrl, item.itemId);
+                        } else if (item.itemType === 'VET') {
+                          imageSrc = getVetImageUrl(item.name, item.imageUrl);
+                        } else if (item.itemType === 'SERVICE') {
+                          imageSrc = getServiceImageUrl(item.name, item.imageUrl, item.itemId);
+                        } else if (item.imageUrl) {
+                          imageSrc = getCloudinaryImageUrl(item.imageUrl);
+                        }
 
-                      return (
-                        <div
-                          key={item.id}
-                          className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4 group hover:shadow-xs transition-shadow"
-                        >
-                          <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                            <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
-                              {imageSrc ? (
-                                <img src={imageSrc} alt={item.name} className="w-full h-full object-cover" />
-                              ) : item.itemType === 'VET' ? (
-                                <Stethoscope className="w-6 h-6 text-[#287A41]" />
-                              ) : item.itemType === 'SERVICE' ? (
-                                <Sparkles className="w-6 h-6 text-[#7E22CE]" />
-                              ) : (
-                                <ShoppingBag className="w-6 h-6 text-[#009E66]" />
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
-                                  item.itemType === 'VET'
-                                    ? 'bg-[#E3F3E9] text-[#287A41]'
-                                    : item.itemType === 'SERVICE'
-                                    ? 'bg-[#F3E8FF] text-[#7E22CE]'
-                                    : 'bg-[#E6F9EC] text-[#009E66]'
-                                }`}>
-                                  {item.itemType}
-                                </span>
+                        return (
+                          <motion.div
+                            key={item.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.25 } }}
+                            className="bg-[#F8F6F0] rounded-2xl p-4 border border-[#EAE3D4] flex items-center justify-between gap-4 group hover:shadow-xs transition-shadow"
+                          >
+                            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+                              <div className="w-14 h-14 rounded-xl overflow-hidden bg-white border border-[#E5DFCE] shrink-0 flex items-center justify-center">
+                                {imageSrc ? (
+                                  <img src={imageSrc} alt={item.name} className="w-full h-full object-cover" />
+                                ) : item.itemType === 'VET' ? (
+                                  <Stethoscope className="w-6 h-6 text-[#009E66]" />
+                                ) : item.itemType === 'SERVICE' ? (
+                                  <Sparkles className="w-6 h-6 text-[#7E22CE]" />
+                                ) : (
+                                  <ShoppingBag className="w-6 h-6 text-[#009E66]" />
+                                )}
                               </div>
-                              <h3 className="text-sm font-bold text-[#16241B] truncate mt-1">{item.name}</h3>
-                              {item.price !== undefined && item.price !== null && (
-                                <p className="text-xs font-semibold text-[#009E66]">{formatCurrency(item.price)}</p>
-                              )}
-                              {item.specialization && (
-                                <p className="text-xs text-[#EF7C3C] font-semibold truncate">{item.specialization}</p>
-                              )}
-                              {item.category && (
-                                <p className="text-[11px] text-[#88998C] font-normal truncate">{item.category}</p>
-                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                                    item.itemType === 'VET'
+                                      ? 'bg-[#E3F3E9] text-[#009E66]'
+                                      : item.itemType === 'SERVICE'
+                                      ? 'bg-[#F3E8FF] text-[#7E22CE]'
+                                      : 'bg-[#E6F9EC] text-[#009E66]'
+                                  }`}>
+                                    {item.itemType}
+                                  </span>
+                                </div>
+                                <h3 className="text-sm font-bold text-[#16241B] truncate mt-1">{item.name}</h3>
+                                {item.price !== undefined && item.price !== null && (
+                                  <p className="text-xs font-semibold text-[#009E66]">{formatCurrency(item.price)}</p>
+                                )}
+                                {item.specialization && (
+                                  <p className="text-xs text-[#EF7C3C] font-semibold truncate">{item.specialization}</p>
+                                )}
+                                {item.category && (
+                                  <p className="text-[11px] text-[#88998C] font-normal truncate">{item.category}</p>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <HeartToggle
-                              itemType={item.itemType}
-                              itemId={item.itemId}
-                              isInitiallySaved={true}
-                              onToggle={() => fetchWishlist()}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => navigate(itemLink)}
-                              className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-semibold hover:bg-[#008757] transition-colors cursor-pointer"
-                            >
-                              View Item
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <HeartToggle
+                                itemType={item.itemType}
+                                itemId={item.itemId}
+                                isInitiallySaved={true}
+                                onToggle={() => fetchWishlist()}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => navigate(itemLink)}
+                                className="px-3.5 py-2 rounded-full bg-[#009E66] text-white text-xs font-semibold hover:bg-[#008757] transition-colors cursor-pointer"
+                              >
+                                View Item
+                              </button>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
                   </div>
                 )}
               </div>

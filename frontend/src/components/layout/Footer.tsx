@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, CheckCircle2, AlertCircle, ArrowUp } from 'lucide-react';
+import { Mail, CheckCircle2, AlertCircle, Heart, ArrowUp } from 'lucide-react';
 import { getCloudinaryImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 
@@ -11,6 +11,13 @@ export const Footer: React.FC = () => {
   const [subscribed, setSubscribed] = useState(false);
   const [subscribeMsg, setSubscribeMsg] = useState<string | null>(null);
   const [isError, setIsError] = useState(false);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  };
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,9 +48,9 @@ export const Footer: React.FC = () => {
     <footer id="site-footer" className="bg-[#16241B] text-white pt-12 sm:pt-14 pb-8 border-t border-[#23382A]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Columns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 pb-10 sm:pb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_1fr_1fr_1.3fr] gap-8 lg:gap-10 items-start pb-10 sm:pb-12">
           {/* Column 1 — Brand */}
-          <div className="lg:col-span-4 space-y-4">
+          <div className="space-y-4">
             <Link
               to="/"
               className="inline-flex items-center gap-2.5 hover:opacity-90 transition-opacity"
@@ -59,7 +66,7 @@ export const Footer: React.FC = () => {
             </Link>
 
             <p className="text-sm text-[#A3B3A6] leading-relaxed max-w-sm">
-              Your comprehensive pet wellness destination. Connecting loving owners with top-rated veterinary care, verified pharmacy supplies, tailored insurance, and expert guidance.
+              Your comprehensive pet wellness destination. Connecting loving owners with verified pharmacy supplies, quality essentials, and expert health guidance.
             </p>
 
             <div className="flex items-center gap-3 pt-2">
@@ -89,26 +96,11 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Column 2 — Quick Links */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Quick Links
             </h3>
             <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
-              <li>
-                <a
-                  href="/#vets"
-                  onClick={(e) => {
-                    const el = document.getElementById('vets');
-                    if (el) {
-                      e.preventDefault();
-                      el.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block cursor-pointer"
-                >
-                  Find a Vet
-                </a>
-              </li>
               <li>
                 <Link
                   to="/services"
@@ -122,7 +114,15 @@ export const Footer: React.FC = () => {
                   to="/pharmacy"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
-                  Pharmacy & Shop
+                  Pharmacy
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/pet-essentials"
+                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
+                >
+                  Paw Store
                 </Link>
               </li>
               <li>
@@ -130,63 +130,55 @@ export const Footer: React.FC = () => {
                   to="/health-tips"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
-                  Health Tips & Advice
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/insurance"
-                  className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
-                >
-                  Pet Insurance
+                  Fur & Facts
                 </Link>
               </li>
             </ul>
           </div>
 
           {/* Column 3 — Support & Legal */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Support & Legal
             </h3>
             <ul className="space-y-2.5 text-sm font-medium text-[#A3B3A6]">
               <li>
-                <a
-                  href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request"
+                <Link
+                  to="/contact-support"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Contact Support
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry"
+                <Link
+                  to="/privacy-policy"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry"
+                <Link
+                  to="/terms-of-service"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Terms of Service
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="mailto:help@pawfectly.com?subject=Help%20Center%20Inquiry"
+                <Link
+                  to="/help-center"
                   className="hover:text-white hover:translate-x-0.5 transition-all inline-block"
                 >
                   Help Center
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
 
           {/* Column 4 — Stay Updated (Newsletter) */}
-          <div className="lg:col-span-3 space-y-4">
+          <div className="space-y-4">
             <h3 className="text-xs font-bold uppercase tracking-wider text-white">
               Stay Updated
             </h3>
@@ -240,37 +232,23 @@ export const Footer: React.FC = () => {
         {/* Bottom Bar */}
         <div className="pt-6 sm:pt-8 border-t border-[#23382A] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#A3B3A6]">
           <p className="text-center sm:text-left">
-            © 2024 Pawfectly Inc. Dedicated to happier, healthier pets everywhere.
+            © 2024 Pawfectly India. Bengaluru, Karnataka, India.
           </p>
-          <div className="flex items-center gap-5 font-medium">
-            <a
-              href="mailto:privacy@pawfectly.com?subject=Privacy%20Policy%20Inquiry"
-              className="hover:text-white transition-colors"
-            >
-              Privacy
-            </a>
-            <a
-              href="mailto:terms@pawfectly.com?subject=Terms%20of%20Service%20Inquiry"
-              className="hover:text-white transition-colors"
-            >
-              Terms
-            </a>
-            <a
-              href="mailto:support@pawfectly.com?subject=Pawfectly%20Support%20Request"
-              className="hover:text-white transition-colors"
-            >
-              Contact
-            </a>
 
-            {/* Back to Top Button */}
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-4 sm:gap-6 text-xs text-[#7A8E7E]">
+            <span className="inline-flex items-center gap-1.5 text-[#A3B3A6]">
+              <span>Made with</span>
+              <Heart className="w-3.5 h-3.5 text-[#EF7C3C] fill-[#EF7C3C]" />
+              <span>in Bangalore</span>
+            </span>
+
             <button
+              onClick={scrollToTop}
               type="button"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              aria-label="Back to top"
-              title="Back to top"
-              className="w-8 h-8 rounded-full bg-[#1E3023] border border-[#2B3E30] text-[#A3B3A6] hover:text-white hover:border-[#009E66] hover:bg-[#23382A] flex items-center justify-center transition-all cursor-pointer group shadow-2xs ml-2"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1E3023] border border-[#2B3E30] text-[#CBDAC6] hover:text-white hover:border-[#009E66] hover:bg-[#23382A] transition-all duration-200 cursor-pointer font-semibold group shadow-2xs text-xs"
+              aria-label="Scroll back to top"
             >
-              <ArrowUp className="w-4 h-4 transition-transform duration-200 group-hover:-translate-y-0.5 text-white" />
+              <ArrowUp className="w-3.5 h-3.5 text-[#009E66] group-hover:-translate-y-0.5 transition-transform" />
             </button>
           </div>
         </div>

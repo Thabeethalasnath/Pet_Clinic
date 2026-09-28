@@ -68,7 +68,7 @@ export const AdminToastProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           <div
             className={`px-4 py-3 rounded-xl shadow-lg border flex items-center gap-2.5 text-xs font-semibold pointer-events-auto ${
               toast.type === 'success'
-                ? 'bg-[#EBF7EE] border-[#C3E8CC] text-[#287A41]'
+                ? 'bg-[#EBF7EE] border-[#C3E8CC] text-[#009E66]'
                 : 'bg-[#FDEDEC] border-[#FADBD8] text-[#C0392B]'
             }`}
           >

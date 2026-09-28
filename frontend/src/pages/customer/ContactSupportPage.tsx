@@ -12,7 +12,6 @@ import {
   Package,
   Calendar,
   Sparkles,
-  MessageSquare,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -151,12 +150,8 @@ Sent via Pawfectly Web Contact Support Assistant`;
         {/* Top Header Banner */}
         <section className="bg-gradient-to-b from-[#1F4B43] to-[#16241B] text-white py-8 sm:py-10 px-4 sm:px-6 lg:px-8 border-b border-[#23382A]">
           <div className="max-w-5xl mx-auto text-center space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#E3A23A]/15 border border-[#E3A23A]/30 text-[#E3A23A] text-xs font-bold uppercase tracking-wider">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Customer Care & Inquiries
-            </div>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-              Need Help? <span className="text-[#E3A23A]">We're Here For You.</span>
+              Need Help? <span className="text-[#EF7C3C]">We're Here For You.</span>
             </h1>
             <p className="text-sm sm:text-base text-[#CBDAC6] max-w-2xl mx-auto leading-relaxed">
               Have questions about your in-store pickup, service appointments, or pet care profile? Our dedicated care team is ready to assist you.
@@ -174,7 +169,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
             >
               <div className="border-b border-[#CBDAC6]/40 pb-5">
                 <h2 className="text-xl sm:text-2xl font-bold text-[#1F4B43] flex items-center gap-2.5">
-                  <Send className="w-5 h-5 text-[#E1694F]" />
+                  <Send className="w-5 h-5 text-[#EF7C3C]" />
                   Send Our Team a Message
                 </h2>
                 <p className="text-xs sm:text-sm text-[#445548] mt-1">
@@ -198,7 +193,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
                 {/* Full Name */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#1F4B43] mb-1.5">
-                    Your Name <span className="text-[#E1694F]">*</span>
+                    Your Name <span className="text-[#EF7C3C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -209,12 +204,12 @@ Sent via Pawfectly Web Contact Support Assistant`;
                     }
                     className={`w-full px-4 py-3 rounded-xl border text-sm transition-all focus:outline-hidden focus:ring-2 bg-[#F6F7F2]/50 ${
                       errors.fullName
-                        ? 'border-[#E1694F] focus:ring-[#E1694F]/20'
+                        ? 'border-[#EF7C3C] focus:ring-[#EF7C3C]/20'
                         : 'border-[#CBDAC6] focus:border-[#1F4B43] focus:ring-[#1F4B43]/15'
                     }`}
                   />
                   {errors.fullName && (
-                    <p className="text-xs text-[#E1694F] mt-1 flex items-center gap-1 font-medium">
+                    <p className="text-xs text-[#EF7C3C] mt-1 flex items-center gap-1 font-medium">
                       <AlertCircle className="w-3.5 h-3.5" /> {errors.fullName}
                     </p>
                   )}
@@ -223,7 +218,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
                 {/* Email Address */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#1F4B43] mb-1.5">
-                    Email Address <span className="text-[#E1694F]">*</span>
+                    Email Address <span className="text-[#EF7C3C]">*</span>
                   </label>
                   <input
                     type="email"
@@ -234,12 +229,12 @@ Sent via Pawfectly Web Contact Support Assistant`;
                     }
                     className={`w-full px-4 py-3 rounded-xl border text-sm transition-all focus:outline-hidden focus:ring-2 bg-[#F6F7F2]/50 ${
                       errors.email
-                        ? 'border-[#E1694F] focus:ring-[#E1694F]/20'
+                        ? 'border-[#EF7C3C] focus:ring-[#EF7C3C]/20'
                         : 'border-[#CBDAC6] focus:border-[#1F4B43] focus:ring-[#1F4B43]/15'
                     }`}
                   />
                   {errors.email && (
-                    <p className="text-xs text-[#E1694F] mt-1 flex items-center gap-1 font-medium">
+                    <p className="text-xs text-[#EF7C3C] mt-1 flex items-center gap-1 font-medium">
                       <AlertCircle className="w-3.5 h-3.5" /> {errors.email}
                     </p>
                   )}
@@ -276,7 +271,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
                 {/* Subject */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#1F4B43] mb-1.5">
-                    Subject <span className="text-[#E1694F]">*</span>
+                    Subject <span className="text-[#EF7C3C]">*</span>
                   </label>
                   <input
                     type="text"
@@ -287,12 +282,12 @@ Sent via Pawfectly Web Contact Support Assistant`;
                     }
                     className={`w-full px-4 py-3 rounded-xl border text-sm transition-all focus:outline-hidden focus:ring-2 bg-[#F6F7F2]/50 ${
                       errors.subject
-                        ? 'border-[#E1694F] focus:ring-[#E1694F]/20'
+                        ? 'border-[#EF7C3C] focus:ring-[#EF7C3C]/20'
                         : 'border-[#CBDAC6] focus:border-[#1F4B43] focus:ring-[#1F4B43]/15'
                     }`}
                   />
                   {errors.subject && (
-                    <p className="text-xs text-[#E1694F] mt-1 flex items-center gap-1 font-medium">
+                    <p className="text-xs text-[#EF7C3C] mt-1 flex items-center gap-1 font-medium">
                       <AlertCircle className="w-3.5 h-3.5" /> {errors.subject}
                     </p>
                   )}
@@ -301,7 +296,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
                 {/* Message */}
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-[#1F4B43] mb-1.5">
-                    Message Details <span className="text-[#E1694F]">*</span>
+                    Message Details <span className="text-[#EF7C3C]">*</span>
                   </label>
                   <textarea
                     rows={5}
@@ -312,12 +307,12 @@ Sent via Pawfectly Web Contact Support Assistant`;
                     }
                     className={`w-full px-4 py-3 rounded-xl border text-sm transition-all focus:outline-hidden focus:ring-2 bg-[#F6F7F2]/50 ${
                       errors.message
-                        ? 'border-[#E1694F] focus:ring-[#E1694F]/20'
+                        ? 'border-[#EF7C3C] focus:ring-[#EF7C3C]/20'
                         : 'border-[#CBDAC6] focus:border-[#1F4B43] focus:ring-[#1F4B43]/15'
                     }`}
                   />
                   {errors.message && (
-                    <p className="text-xs text-[#E1694F] mt-1 flex items-center gap-1 font-medium">
+                    <p className="text-xs text-[#EF7C3C] mt-1 flex items-center gap-1 font-medium">
                       <AlertCircle className="w-3.5 h-3.5" /> {errors.message}
                     </p>
                   )}
@@ -334,7 +329,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
                     type="submit"
                     className="w-full py-3.5 px-6 rounded-xl bg-[#009E66] hover:bg-[#008756] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all cursor-pointer"
                   >
-                    <Mail className="w-4 h-4 text-[#E3A23A]" />
+                    <Mail className="w-4 h-4 text-[#EF7C3C]" />
                     Submit Inquiry (Open Email)
                   </button>
                 </div>
@@ -346,7 +341,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
               {/* Card 1: Direct Support Channels */}
               <div className="bg-white rounded-2xl border border-[#CBDAC6]/60 shadow-xs p-6 space-y-5">
                 <h3 className="text-base font-bold text-[#1F4B43] flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-[#E3A23A]" />
+                  <HelpCircle className="w-5 h-5 text-[#EF7C3C]" />
                   Direct Contact Information
                 </h3>
 
@@ -398,10 +393,10 @@ Sent via Pawfectly Web Contact Support Assistant`;
                         Care Center & Pickup Counter
                       </p>
                       <p className="text-xs text-[#16241B] font-medium mt-0.5">
-                        104 Wellness Boulevard, Suite 200
+                        104 Wellness Boulevard, Indiranagar
                       </p>
                       <p className="text-xs text-[#5E6E62]">
-                        Ground Floor Collection Lobby
+                        Bengaluru, Karnataka 560038, India
                       </p>
                     </div>
                   </div>
@@ -412,7 +407,7 @@ Sent via Pawfectly Web Contact Support Assistant`;
               <div className="bg-white rounded-2xl border border-[#CBDAC6]/60 shadow-xs p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold text-[#1F4B43] flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[#E1694F]" />
+                    <Sparkles className="w-4 h-4 text-[#EF7C3C]" />
                     Quick Fill Shortcuts
                   </h3>
                   <span className="text-[11px] font-semibold text-[#5E6E62]">
@@ -435,12 +430,12 @@ Sent via Pawfectly Web Contact Support Assistant`;
                         className="w-full text-left p-3 rounded-xl border border-[#CBDAC6]/60 bg-[#FAF6EE] hover:bg-[#F6F7F2] hover:border-[#1F4B43] transition-all flex items-center justify-between group cursor-pointer"
                       >
                         <div className="flex items-center gap-2.5">
-                          <Icon className="w-4 h-4 text-[#1F4B43] group-hover:text-[#E1694F] transition-colors" />
+                          <Icon className="w-4 h-4 text-[#1F4B43] group-hover:text-[#EF7C3C] transition-colors" />
                           <span className="text-xs font-bold text-[#1F4B43] group-hover:text-[#16241B]">
                             {r.label}
                           </span>
                         </div>
-                        <span className="text-xs text-[#E3A23A] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs text-[#EF7C3C] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                           Apply →
                         </span>
                       </button>

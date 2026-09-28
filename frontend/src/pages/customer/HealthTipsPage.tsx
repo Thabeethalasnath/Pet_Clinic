@@ -5,7 +5,7 @@ import { Footer } from '../../components/layout/Footer';
 import { Skeleton } from '../../components/ui/Skeleton';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { ErrorState } from '../../components/feedback/ErrorState';
-import { getCloudinaryImageUrl, getArticleImageUrl } from '../../lib/utils';
+import { getArticleImageUrl } from '../../lib/utils';
 import { apiClient } from '../../lib/axios';
 import {
   Search,
@@ -23,6 +23,8 @@ import {
   Moon,
   Sparkles,
 } from 'lucide-react';
+
+import { FALLBACK_ARTICLES } from '../../data/mockArticles';
 
 interface ArticleDto {
   id: number;
@@ -66,12 +68,12 @@ export const HealthTipsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('All Tips');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [articles, setArticles] = useState<ArticleDto[]>([]);
-  const [selectedPetType, setSelectedPetType] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [articles, setArticles] = useState<ArticleDto[]>(FALLBACK_ARTICLES);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const filterTabs = [
+    { name: 'All Tips', icon: Sparkles, bg: 'bg-[#F6F7F2]', text: 'text-[#009E66]', border: 'border-[#CBDAC6]' },
     { name: 'Nutrition', icon: Utensils, bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]', border: 'border-[#FDE047]' },
     { name: 'Vaccination', icon: Syringe, bg: 'bg-[#E0F2FE]', text: 'text-[#0284C7]', border: 'border-[#BAE6FD]' },
     { name: 'Grooming', icon: Scissors, bg: 'bg-[#FFE4E6]', text: 'text-[#E11D48]', border: 'border-[#FECDD3]' },
@@ -81,7 +83,6 @@ export const HealthTipsPage: React.FC = () => {
     { name: 'Emergency Care', icon: AlertTriangle, bg: 'bg-[#FEE2E2]', text: 'text-[#DC2626]', border: 'border-[#FECACA]' },
   ];
 
-  const popularTags = ['Vaccination', 'Nutrition', 'Puppy Care', 'Cat Care', 'Grooming'];
 
   const categoryColorMap: Record<string, { bg: string; text: string }> = {
     Nutrition: { bg: 'bg-[#FEF9C3]', text: 'text-[#B45309]' },
@@ -121,10 +122,10 @@ export const HealthTipsPage: React.FC = () => {
             existingTitles.add(tip.title.toLowerCase().trim());
           }
         }
-        setArticles(combined);
+        setArticles(combined.length > 0 ? combined : FALLBACK_ARTICLES);
       })
       .catch(() => {
-        setError('Failed to load articles and health tips. Please try again.');
+        setArticles(FALLBACK_ARTICLES);
       })
       .finally(() => {
         setLoading(false);
@@ -135,134 +136,55 @@ export const HealthTipsPage: React.FC = () => {
     fetchArticles();
   }, []);
 
-  const filteredArticles = articles.filter((art) => {
-    const resolvedCat = resolveCategory(art.title, art.category);
-    const title = (art.title || '').toLowerCase();
-    const content = (art.content || '').toLowerCase();
-    const excerpt = (art.excerpt || '').toLowerCase();
-    const targetTab = activeTab.toLowerCase();
-    const query = (searchQuery || '').toLowerCase();
+  // Live Article Counts per Category
+  const categoryCounts = React.useMemo(() => {
+    const counts: Record<string, number> = { 'All Tips': articles.length };
+    articles.forEach((art) => {
+      const cat = resolveCategory(art.title, art.category);
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
+  }, [articles]);
 
-    const matchesCategory =
-      activeTab === 'All Tips' ||
-      resolvedCat.toLowerCase() === targetTab;
+  const filteredArticles = React.useMemo(() => {
+    return articles.filter((art) => {
+      const resolvedCat = resolveCategory(art.title, art.category);
+      const title = (art.title || '').toLowerCase();
+      const content = (art.content || '').toLowerCase();
+      const excerpt = (art.excerpt || '').toLowerCase();
+      const targetTab = activeTab.toLowerCase();
+      const query = (searchQuery || '').toLowerCase();
 
-    const matchesSearch =
-      searchQuery === '' ||
-      title.includes(query) ||
-      content.includes(query) ||
-      excerpt.includes(query) ||
-      resolvedCat.toLowerCase().includes(query);
+      const matchesCategory =
+        activeTab === 'All Tips' ||
+        resolvedCat.toLowerCase() === targetTab;
 
-    return matchesCategory && matchesSearch;
-  });
+      const matchesSearch =
+        searchQuery === '' ||
+        title.includes(query) ||
+        content.includes(query) ||
+        excerpt.includes(query) ||
+        resolvedCat.toLowerCase().includes(query);
 
+      return matchesCategory && matchesSearch;
+    });
+  }, [articles, activeTab, searchQuery]);
 
-  const petTypeFilteredArticles = articles.filter((art) => {
-    if (!selectedPetType) return true;
+  // Featured Article: Pick isFeatured === true first, else fall back to most recently published
+  const featuredArticle = React.useMemo(() => {
+    if (filteredArticles.length === 0) return null;
+    const explicitlyFeatured = filteredArticles.find((a) => a.isFeatured === true);
+    if (explicitlyFeatured) return explicitlyFeatured;
+    return [...filteredArticles].sort(
+      (a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime()
+    )[0];
+  }, [filteredArticles]);
 
-    const petType = (art.petType || '').toLowerCase();
-    const title = (art.title || '').toLowerCase();
-    const excerpt = (art.excerpt || '').toLowerCase();
-    const content = (art.content || '').toLowerCase();
-    const resolvedCat = resolveCategory(art.title, art.category).toLowerCase();
-    const target = selectedPetType.toLowerCase();
-    const targetSingular = target.endsWith('s') ? target.slice(0, -1) : target;
-
-    return (
-      petType.includes(target) ||
-      petType.includes(targetSingular) ||
-      petType === 'all' ||
-      title.includes(target) ||
-      title.includes(targetSingular) ||
-      excerpt.includes(target) ||
-      excerpt.includes(targetSingular) ||
-      content.includes(target) ||
-      content.includes(targetSingular) ||
-      resolvedCat.includes(target) ||
-      resolvedCat.includes(targetSingular)
-    );
-  });
-
-  const petTypes = [
-    {
-      name: 'Dogs',
-      bg: 'bg-[#FEF9C3]',
-      border: 'border-[#FDE047]',
-      hoverBorder: 'hover:border-[#EAB308]',
-      activeBorder: 'border-[#CA8A04]',
-      text: 'text-[#B45309]',
-      hoverText: 'group-hover:text-[#B45309]',
-      hoverBg: 'hover:bg-[#FEF9C3]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1789131563/ChatGPT_Image_Sep_11_2026_06_29_05_PM.png',
-    },
-    {
-      name: 'Cats',
-      bg: 'bg-[#E6F9EC]',
-      border: 'border-[#C3ECD0]',
-      hoverBorder: 'hover:border-[#3FA65C]',
-      activeBorder: 'border-[#287A41]',
-      text: 'text-[#287A41]',
-      hoverText: 'group-hover:text-[#287A41]',
-      hoverBg: 'hover:bg-[#E6F9EC]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1789132287/ChatGPT_Image_Sep_11_2026_06_41_13_PM.png',
-    },
-    {
-      name: 'Rabbits',
-      bg: 'bg-[#FFEDD5]',
-      border: 'border-[#FED7AA]',
-      hoverBorder: 'hover:border-[#FB923C]',
-      activeBorder: 'border-[#C2410C]',
-      text: 'text-[#C2410C]',
-      hoverText: 'group-hover:text-[#C2410C]',
-      hoverBg: 'hover:bg-[#FFEDD5]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/886e967f-9a24-48c5-aeff-ff8e6f6a00e6_1.png',
-    },
-    {
-      name: 'Birds',
-      bg: 'bg-[#E0F2FE]',
-      border: 'border-[#BAE6FD]',
-      hoverBorder: 'hover:border-[#38BDF8]',
-      activeBorder: 'border-[#0284C7]',
-      text: 'text-[#0284C7]',
-      hoverText: 'group-hover:text-[#0284C7]',
-      hoverBg: 'hover:bg-[#E0F2FE]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/ce452fe3-fdc7-4140-8b94-6c0f373622db_1.png',
-    },
-    {
-      name: 'Small Pets',
-      bg: 'bg-[#FFE4E6]',
-      border: 'border-[#FECDD3]',
-      hoverBorder: 'hover:border-[#FB7185]',
-      activeBorder: 'border-[#E11D48]',
-      text: 'text-[#E11D48]',
-      hoverText: 'group-hover:text-[#E11D48]',
-      hoverBg: 'hover:bg-[#FFE4E6]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/c0d11401-6185-488d-9267-a5235e16375a_1.png',
-    },
-    {
-      name: 'Reptiles',
-      bg: 'bg-[#DCFCE7]',
-      border: 'border-[#BBF7D0]',
-      hoverBorder: 'hover:border-[#4ADE80]',
-      activeBorder: 'border-[#15803D]',
-      text: 'text-[#15803D]',
-      hoverText: 'group-hover:text-[#15803D]',
-      hoverBg: 'hover:bg-[#DCFCE7]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/3553855e-62e9-4565-9f5a-a5d484ecd080_1.png',
-    },
-    {
-      name: 'Fish',
-      bg: 'bg-[#CCFBF1]',
-      border: 'border-[#99F6E4]',
-      hoverBorder: 'hover:border-[#2DD4BF]',
-      activeBorder: 'border-[#0D9488]',
-      text: 'text-[#0D9488]',
-      hoverText: 'group-hover:text-[#0D9488]',
-      hoverBg: 'hover:bg-[#CCFBF1]/50',
-      imageUrl: 'https://res.cloudinary.com/vphylrop/image/upload/v1788895236/119ae58d-9928-4822-afb6-97826bd4341c_1.png',
-    },
-  ];
+  // Remaining Articles for 3-Column Grid
+  const remainingArticles = React.useMemo(() => {
+    if (!featuredArticle) return filteredArticles;
+    return filteredArticles.filter((a) => a.id !== featuredArticle.id);
+  }, [filteredArticles, featuredArticle]);
 
   const quickDailyTips = [
     {
@@ -280,7 +202,7 @@ export const HealthTipsPage: React.FC = () => {
     {
       icon: PawPrint,
       bg: 'bg-[#E6F9EC]',
-      color: 'text-[#287A41]',
+      color: 'text-[#009E66]',
       text: 'Ensure regular daily exercise and interactive playtime.',
     },
     {
@@ -302,151 +224,111 @@ export const HealthTipsPage: React.FC = () => {
       {/* 1. Navbar */}
       <Navbar activePage="health-tips" />
 
-      <main className="flex-grow space-y-16 lg:space-y-24 pb-20">
-        {/* 2. Hero Section */}
-        <section id="health-tips-hero" className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-24 lg:pt-28 pb-16 sm:pb-24">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center min-h-[460px] sm:min-h-[540px]">
-            <div className="lg:col-span-5 space-y-8">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#E6F9EC] text-[#287A41] border border-[#C3ECD0] text-xs font-black uppercase tracking-wider shadow-2xs">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#287A41]" />
-                <span>PET HEALTH TIPS</span>
-              </div>
-
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#16241B] tracking-tight leading-[1.12]">
-                Small Care Makes A{' '}
-                <span className="text-[#009E66]">Big Difference</span>
-                <span className="text-[#16241B]">.</span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-[#556658] max-w-xl font-medium leading-relaxed">
-                Simple tips. Healthier pets. Happier lives. Expert advice,
-                everyday care, and everything your pet needs to stay healthy and vibrant.
-              </p>
-
-              {/* Search Bar */}
-              <div className="max-w-xl pt-2">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const el = document.getElementById('featured-health-tips');
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  className="flex items-center bg-white rounded-full p-1.5 sm:p-2 border border-[#EDE7D9] shadow-md focus-within:ring-2 focus-within:ring-[#3FA65C] transition-all"
-                >
-                  <div className="pl-3 sm:pl-4 text-[#556658]">
-                    <Search className="w-5 h-5 text-[#556658]" />
-                  </div>
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search health tips (e.g. diet, vaccination, grooming...)"
-                    className="w-full px-3 text-xs sm:text-sm text-[#16241B] placeholder-[#88998C] bg-transparent focus:outline-hidden"
-                  />
-                  <button
-                    type="submit"
-                    className="px-5 sm:px-7 py-2.5 sm:py-3 bg-[#009E66] hover:bg-[#008757] text-white font-bold rounded-full text-xs sm:text-sm shadow-xs transition-all shrink-0 cursor-pointer"
-                  >
-                    Search
-                  </button>
-                </form>
-
-                {/* Popular Searches */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-3.5 text-xs text-[#556658]">
-                  <span className="font-bold text-[#16241B]">Popular Searches:</span>
-                  {popularTags.map((tag) => (
-                    <button
-                      key={tag}
-                      onClick={() => {
-                        setSearchQuery(tag);
-                        const el = document.getElementById('featured-health-tips');
-                        if (el) {
-                          el.scrollIntoView({ behavior: 'smooth' });
-                        }
-                      }}
-                      className="px-3 py-1 rounded-full bg-white border border-[#E5DFCE] hover:border-[#3FA65C]/40 text-[#16241B] hover:text-[#009E66] shadow-2xs hover:shadow-md hover:bg-[#E6F4E8] font-bold text-xs transition-all cursor-pointer"
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Transparent Hero Graphic - Bigger & Static */}
-            <div className="lg:col-span-7 flex justify-center lg:justify-end items-center">
-              <img
-                src={getCloudinaryImageUrl('health_tips_hero')}
-                alt="Health Tips - Small Pets Big Love"
-                className="w-full max-w-[980px] lg:max-w-[1080px] h-auto object-contain pointer-events-none select-none"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* 3. Featured Health Tips Header & Filter Tabs */}
+      <main className="flex-grow space-y-10 sm:space-y-14 pt-6 sm:pt-8 pb-14">
+        {/* Featured Health Tips Header & Category Filter Tabs with Live Counts */}
         <section id="featured-health-tips" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div className="space-y-1">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[#16241B] tracking-tight">
-                Featured <span className="text-[#EF7C3C]">Health Tips</span>.
+                Fur Real <span className="text-[#EF7C3C]">Health Tips</span>.
               </h2>
               <p className="text-xs sm:text-sm text-[#556658] font-medium">
-                Expert-backed advice to keep your furry friends healthy, happy, and active.
+                Easy little tips for healthier paws and happier tails.
               </p>
             </div>
 
-            <button
-              onClick={() => {
-                setActiveTab('All Tips');
-                setSearchQuery('');
-              }}
-              className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
-            >
-              <span>View all</span>
-            </button>
+            {/* Live Count, Browse Pet Types Button & Search Input */}
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+              <button
+                onClick={() => navigate('/health-tips/by-pet-type')}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border cursor-pointer shrink-0 shadow-2xs bg-white text-[#009E66] border-[#EDE7D9] hover:border-[#009E66] hover:bg-[#E6F9EC]"
+              >
+                <PawPrint className="w-3.5 h-3.5 text-[#EF7C3C]" />
+                <span>Browse by Pet Type</span>
+              </button>
+
+              <div className="relative flex-1 md:w-64">
+                <Search className="w-4 h-4 text-[#88998C] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Filter articles..."
+                  className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-[#EDE7D9] text-xs text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-1 focus:ring-[#009E66] shadow-2xs"
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3 lg:gap-3.5 w-full py-1 overflow-x-auto no-scrollbar scroll-smooth">
+          {/* Horizontal Scrollable Category Pills with Live Dynamic Counts */}
+          <div className="flex items-center gap-2.5 sm:gap-3 w-full py-1 overflow-x-auto no-scrollbar scroll-smooth">
             {filterTabs.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeTab === tab.name;
+              const count = categoryCounts[tab.name] || 0;
+
               return (
                 <button
                   key={tab.name}
                   onClick={() => setActiveTab(tab.name)}
-                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${isActive
-                    ? 'bg-[#E6F9EC] border-[#3FA65C] text-[#287A41] shadow-xs ring-2 ring-[#3FA65C]/20'
-                    : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#3FA65C] hover:text-[#16241B] shadow-2xs'
-                    }`}
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-full text-xs sm:text-sm font-bold transition-all border cursor-pointer whitespace-nowrap shrink-0 ${
+                    isActive
+                      ? 'bg-[#009E66] border-[#009E66] text-white shadow-xs ring-2 ring-[#009E66]/20'
+                      : 'bg-white border-[#EDE7D9] text-[#556658] hover:border-[#009E66] hover:text-[#16241B] shadow-2xs'
+                  }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-colors ${isActive ? 'bg-[#3FA65C] text-white' : `${tab.bg} ${tab.text}`
-                      }`}
+                    className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                      isActive ? 'bg-[#EF7C3C] text-[#16241B]' : `${tab.bg} ${tab.text}`
+                    }`}
                   >
-                    <TabIcon className="w-3.5 h-3.5" />
+                    <TabIcon className="w-3 h-3" />
                   </div>
                   <span className="whitespace-nowrap">{tab.name}</span>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isActive ? 'bg-white/20 text-white' : 'bg-[#FAF6EE] text-[#88998C]'
+                    }`}
+                  >
+                    {count}
+                  </span>
                 </button>
               );
             })}
           </div>
         </section>
 
-        {/* 4. Featured Health Tips Articles */}
+        {/* 4. Featured Health Tips Articles (Magazine Style: 1 Large Card + 3-Column Small Grid) */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] space-y-2">
-                    <Skeleton className="w-full aspect-[16/10] rounded-[16px]" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
+              /* Adapted Skeleton: Large Featured Card Skeleton + 3 Small Grid Skeletons */
+              <div className="space-y-6">
+                {/* Large Featured Card Skeleton */}
+                <div className="bg-white rounded-3xl p-5 sm:p-7 border border-[#EDE7D9] flex flex-col lg:flex-row gap-6">
+                  <Skeleton className="w-full lg:w-[48%] aspect-[16/10] rounded-2xl bg-[#FAF6EE]" />
+                  <div className="flex-1 space-y-4 py-2">
+                    <Skeleton className="h-6 w-32 rounded-full bg-[#FAF6EE]" />
+                    <Skeleton className="h-8 w-4/5 rounded-xl bg-[#FAF6EE]" />
+                    <Skeleton className="h-4 w-full rounded-md bg-[#FAF6EE]" />
+                    <Skeleton className="h-4 w-3/4 rounded-md bg-[#FAF6EE]" />
+                    <div className="pt-4 flex items-center justify-between">
+                      <Skeleton className="h-5 w-36 rounded-md bg-[#FAF6EE]" />
+                      <Skeleton className="h-10 w-28 rounded-xl bg-[#FAF6EE]" />
+                    </div>
                   </div>
-                ))}
+                </div>
+
+                {/* 3-Column Grid Skeletons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl p-4 border border-[#EDE7D9] space-y-3">
+                      <Skeleton className="w-full aspect-[16/10] rounded-xl bg-[#FAF6EE]" />
+                      <Skeleton className="h-4 w-3/4 rounded-md bg-[#FAF6EE]" />
+                      <Skeleton className="h-3 w-1/2 rounded-md bg-[#FAF6EE]" />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : error ? (
               <ErrorState message={error} onRetry={fetchArticles} />
@@ -461,56 +343,164 @@ export const HealthTipsPage: React.FC = () => {
                 }}
               />
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredArticles.map((tip) => {
-                  const category = resolveCategory(tip.title, tip.category);
-                  const colors = categoryColorMap[category] || {
-                    bg: 'bg-[#E6F9EC]',
-                    text: 'text-[#287A41]',
-                  };
-                  const readTime = computeReadTime(tip.content, tip.excerpt);
-
-                  return (
-                    <div
-                      key={tip.id}
-                      onClick={() => navigate(`/health-tips/${tip.id}`)}
-                      className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group cursor-pointer"
-                    >
-                      <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3">
-                        <img
-                          src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
-                          alt={tip.title}
-                          className="w-full h-full object-cover"
-                        />
-                        <span
-                          className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
-                        >
-                          {category}
-                        </span>
+              <div className="space-y-8">
+                {/* ===============================================================
+                    A. LARGE FEATURED ARTICLE CARD (TOP)
+                =============================================================== */}
+                {featuredArticle && (
+                  <div
+                    onClick={() => navigate(`/health-tips/${featuredArticle.id}`)}
+                    className="bg-white rounded-3xl p-5 sm:p-7 border border-[#EDE7D9] shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col lg:flex-row gap-6 lg:gap-8 group cursor-pointer"
+                  >
+                    {/* Left/Top Image with Featured Pill */}
+                    <div className="relative w-full lg:w-[48%] aspect-[16/10] lg:aspect-[16/11] rounded-2xl overflow-hidden bg-[#FAF6EE] shrink-0">
+                      <img
+                        src={resolveArticleImageUrl(featuredArticle.imageUrl, featuredArticle.title)}
+                        alt={featuredArticle.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-3.5 left-3.5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#009E66] text-white text-xs font-black uppercase tracking-wider shadow-md">
+                        <Sparkles className="w-3.5 h-3.5 text-[#EF7C3C]" />
+                        <span>Featured Story</span>
                       </div>
+                    </div>
 
-                      <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 flex-grow">
-                        {tip.title}
-                      </h3>
-
-                      <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-3">
-                        <div className="flex items-center gap-3">
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3 text-[#3FA65C]" />
-                            {tip.publishedAt ? new Date(tip.publishedAt).toLocaleDateString() : 'Recent'}
+                    {/* Right Content Area */}
+                    <div className="flex-1 flex flex-col justify-between py-1 space-y-4">
+                      <div className="space-y-3">
+                        {/* Badges: Category & Read Time */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+                              categoryColorMap[resolveCategory(featuredArticle.title, featuredArticle.category)]?.bg || 'bg-[#E6F9EC]'
+                            } ${
+                              categoryColorMap[resolveCategory(featuredArticle.title, featuredArticle.category)]?.text || 'text-[#009E66]'
+                            } border border-black/5`}
+                          >
+                            {resolveCategory(featuredArticle.title, featuredArticle.category)}
                           </span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-[#287A41]" />
-                            {readTime} min read
+
+                          <span className="flex items-center gap-1 text-xs text-[#556658] font-semibold bg-[#F6F7F2] px-2.5 py-1 rounded-full border border-[#EDE7D9]">
+                            <Clock className="w-3.5 h-3.5 text-[#EF7C3C]" />
+                            <span>{computeReadTime(featuredArticle.content, featuredArticle.excerpt)} min read</span>
                           </span>
                         </div>
-                        <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
-                          <ChevronRight className="w-3.5 h-3.5" />
+
+                        {/* Big Bold Headline */}
+                        <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] group-hover:text-[#009E66] transition-colors leading-tight tracking-tight">
+                          {featuredArticle.title}
+                        </h3>
+
+                        {/* 2-3 Line Excerpt */}
+                        <p className="text-sm sm:text-base text-[#556658] font-normal leading-relaxed line-clamp-3">
+                          {featuredArticle.excerpt ||
+                            (featuredArticle.content ? featuredArticle.content.slice(0, 220) + '...' : 'Explore expert veterinary insights and wellness guidance crafted for your pet’s daily health and enrichment.')}
+                        </p>
+                      </div>
+
+                      {/* Bottom Meta & Action */}
+                      <div className="pt-4 border-t border-[#F0EAE1] flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5 text-xs text-[#88998C] font-semibold">
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-[#009E66]" />
+                            <span>
+                              {featuredArticle.publishedAt
+                                ? new Date(featuredArticle.publishedAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric',
+                                  })
+                                : 'Recent Post'}
+                            </span>
+                          </span>
+                          <span>•</span>
+                          <span className="text-[#556658] font-bold">Pawfectly Team</span>
+                        </div>
+
+                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#009E66] hover:bg-[#008756] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer">
+                          <span>Read Article</span>
+                          <ChevronRight className="w-4 h-4 text-white group-hover:translate-x-0.5 transition-transform" />
                         </div>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* ===============================================================
+                    B. REMAINING ARTICLES (SMALLER 3-COLUMN GRID)
+                =============================================================== */}
+                {remainingArticles.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                    {remainingArticles.map((tip) => {
+                      const category = resolveCategory(tip.title, tip.category);
+                      const colors = categoryColorMap[category] || {
+                        bg: 'bg-[#E6F9EC]',
+                        text: 'text-[#009E66]',
+                      };
+                      const readTime = computeReadTime(tip.content, tip.excerpt);
+
+                      return (
+                        <div
+                          key={tip.id}
+                          onClick={() => navigate(`/health-tips/${tip.id}`)}
+                          className="bg-white rounded-2xl p-4 border border-[#EDE7D9] shadow-xs hover:shadow-lg transition-all duration-200 flex flex-col justify-between group cursor-pointer"
+                        >
+                          <div>
+                            {/* Card Image */}
+                            <div className="relative w-full aspect-[16/10] rounded-xl overflow-hidden bg-[#FAF6EE] mb-3.5">
+                              <img
+                                src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
+                                alt={tip.title}
+                                className="w-full h-full object-cover"
+                              />
+                              <span
+                                className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
+                              >
+                                {category}
+                              </span>
+                            </div>
+
+                            {/* Title */}
+                            <h4 className="text-sm sm:text-base font-black text-[#16241B] group-hover:text-[#009E66] transition-colors line-clamp-2 leading-snug mb-2">
+                              {tip.title}
+                            </h4>
+
+                            {/* Excerpt */}
+                            {tip.excerpt && (
+                              <p className="text-xs text-[#556658] font-normal line-clamp-2 leading-relaxed mb-3">
+                                {tip.excerpt}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Footer Meta */}
+                          <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-2">
+                            <div className="flex items-center gap-2.5">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-[#009E66]" />
+                                {tip.publishedAt
+                                  ? new Date(tip.publishedAt).toLocaleDateString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })
+                                  : 'Recent'}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-[#EF7C3C]" />
+                                {readTime} min read
+                              </span>
+                            </div>
+
+                            <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#009E66] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -518,16 +508,16 @@ export const HealthTipsPage: React.FC = () => {
 
         {/* 5. Quick Daily Tips */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-10 border border-[#E2EEDB] shadow-xs">
+          <div className="bg-[#EFF8F0] rounded-[32px] p-6 sm:p-8 border border-[#E2EEDB] shadow-xs">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-4 space-y-3 text-center lg:text-left">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#287A41] text-[11px] font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
-                  <Sparkles className="w-3.5 h-3.5 text-[#287A41]" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-[#009E66] text-[11px] font-black uppercase tracking-wider shadow-2xs border border-[#C3ECD0]">
+                  <Sparkles className="w-3.5 h-3.5 text-[#009E66]" />
                   <span>QUICK DAILY TIPS</span>
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-[#16241B] tracking-tight leading-tight">
                   Little Habits.<br />
-                  <span className="text-[#287A41]">Healthier Tomorrows.</span>
+                  <span className="text-[#009E66]">Healthier Tomorrows.</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-[#556658] font-medium leading-relaxed">
                   Simple habits you can follow every day to keep your pet happy and thriving.
@@ -557,144 +547,9 @@ export const HealthTipsPage: React.FC = () => {
             </div>
           </div>
         </section>
-
-        {/* 6. Browse Health Tips by Pet Type */}
-        <section id="browse-articles-pet-type" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-[#16241B] tracking-tight">
-                Browse <span className="text-[#EF7C3C]">Health Tips</span> by Pet Type<span className="text-[#EF7C3C]">.</span>
-              </h2>
-
-              <button
-                onClick={() => {
-                  setSelectedPetType(null);
-                }}
-                className="px-3.5 py-1.5 text-xs sm:text-sm font-bold text-[#009E66] bg-white border border-[#009E66]/20 rounded-full shadow-2xs hover:shadow-md hover:text-[#008757] hover:border-[#009E66]/40 flex items-center gap-1 cursor-pointer transition-all shrink-0"
-              >
-                <span>View all tips</span>
-              </button>
-            </div>
-
-            <div className="flex items-center gap-3.5 sm:gap-4 overflow-x-auto no-scrollbar pb-2 scroll-smooth">
-              {petTypes.map((pet) => {
-                const isSelected = selectedPetType?.toLowerCase() === pet.name.toLowerCase();
-                return (
-                  <div
-                    key={pet.name}
-                    onClick={() => {
-                      if (isSelected) {
-                        setSelectedPetType(null);
-                      } else {
-                        setSelectedPetType(pet.name);
-                      }
-                    }}
-                    className={`min-w-[130px] sm:min-w-[150px] flex-1 rounded-[20px] p-2.5 sm:p-3 border transition-all flex flex-col items-center text-center group cursor-pointer ${isSelected
-                      ? `${pet.bg} ${pet.activeBorder} shadow-md ring-2 ring-current/20`
-                      : `bg-white ${pet.border} ${pet.hoverBorder} ${pet.hoverBg} shadow-2xs hover:shadow-md`
-                      }`}
-                  >
-                    <div className="w-full aspect-[4/3] rounded-[14px] overflow-hidden bg-[#FAF6EE] mb-2 border border-black/5">
-                      <img
-                        src={pet.imageUrl}
-                        alt={pet.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <span className={`text-xs sm:text-sm font-bold transition-colors ${isSelected ? pet.text : `text-[#16241B] ${pet.hoverText}`
-                      }`}>
-                      {pet.name}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Health Tips Grid or Empty State under Pet Types */}
-            <div className="pt-2">
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="bg-white rounded-[24px] p-4 border border-[#EDE7D9] space-y-3">
-                      <Skeleton className="w-full aspect-[16/10] rounded-[18px]" />
-                      <Skeleton className="h-5 w-2/3" />
-                      <Skeleton className="h-3 w-full" />
-                      <Skeleton className="h-3 w-4/5" />
-                    </div>
-                  ))}
-                </div>
-              ) : petTypeFilteredArticles.length === 0 ? (
-                <EmptyState
-                  title="No health tips found"
-                  description={
-                    selectedPetType
-                      ? `We couldn't find any health tips for ${selectedPetType} right now. Check back soon for expert advice!`
-                      : 'We couldn\'t find any health tips matching your search filter.'
-                  }
-                  actionLabel="View All Health Tips"
-                  onAction={() => {
-                    setSelectedPetType(null);
-                  }}
-                />
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {petTypeFilteredArticles.map((tip) => {
-                    const category = resolveCategory(tip.title, tip.category);
-                    const colors = categoryColorMap[category] || {
-                      bg: 'bg-[#E6F9EC]',
-                      text: 'text-[#287A41]',
-                    };
-                    const readTime = computeReadTime(tip.content, tip.excerpt);
-
-                    return (
-                      <div
-                        key={tip.id}
-                        onClick={() => navigate(`/health-tips/${tip.id}`)}
-                        className="bg-white rounded-[22px] p-3.5 border border-[#EDE7D9] shadow-xs hover:shadow-md transition-all flex flex-col group cursor-pointer"
-                      >
-                        <div className="relative w-full aspect-[16/10] rounded-[16px] overflow-hidden bg-[#FAF6EE] mb-3 border border-[#F0EAE1]">
-                          <img
-                            src={resolveArticleImageUrl(tip.imageUrl, tip.title)}
-                            alt={tip.title}
-                            className="w-full h-full object-cover"
-                          />
-                          <span
-                            className={`absolute bottom-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${colors.bg} ${colors.text} shadow-xs border border-white/60`}
-                          >
-                            {category}
-                          </span>
-                        </div>
-
-                        <h3 className="text-sm font-black text-[#16241B] group-hover:text-[#3FA65C] transition-colors line-clamp-2 flex-grow">
-                          {tip.title}
-                        </h3>
-
-                        <div className="pt-3 border-t border-[#F0EAE1] flex items-center justify-between text-[11px] text-[#88998C] font-semibold mt-3">
-                          <div className="flex items-center gap-3">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-[#3FA65C]" />
-                              {tip.publishedAt ? new Date(tip.publishedAt).toLocaleDateString() : 'Recent'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-[#287A41]" />
-                              {readTime} min read
-                            </span>
-                          </div>
-                          <div className="w-6 h-6 rounded-full bg-[#FAF6EE] group-hover:bg-[#3FA65C] group-hover:text-white text-[#16241B] flex items-center justify-center transition-colors">
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
       </main>
 
-      {/* 9. Footer */}
+      {/* Footer */}
       <Footer />
     </div>
   );

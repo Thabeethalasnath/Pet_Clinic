@@ -130,7 +130,7 @@ export const PharmacyConcernPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col selection:bg-[#1F4B43]/20">
+    <div className="min-h-screen bg-[#FAF6EE] text-[#16241B] font-sans flex flex-col selection:bg-[#009E66]/20">
       {/* 1. Navbar */}
       <Navbar activePage="pharmacy" />
 
@@ -139,11 +139,11 @@ export const PharmacyConcernPage: React.FC = () => {
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Breadcrumb matching Image 1: Home / Category */}
           <nav className="flex items-center gap-2 text-xs sm:text-sm text-[#556658] font-medium mb-3">
-            <Link to="/" className="hover:text-[#1F4B43] hover:underline">
+            <Link to="/" className="hover:text-[#009E66] hover:underline">
               Home
             </Link>
             <span className="text-[#88998C]">/</span>
-            <Link to="/pharmacy" className="hover:text-[#1F4B43] hover:underline">
+            <Link to="/pharmacy" className="hover:text-[#009E66] hover:underline">
               Pharmacy
             </Link>
             <span className="text-[#88998C]">/</span>
@@ -161,7 +161,7 @@ export const PharmacyConcernPage: React.FC = () => {
           </div>
 
           {/* Yellow/Amber Divider Line */}
-          <div className="w-full h-1 bg-[#E3A23A] rounded-full mb-6" />
+          <div className="w-full h-1 bg-[#EF7C3C] rounded-full mb-6" />
 
           {/* 3. Controls Bar: Sort on left, count on right */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 pb-2">
@@ -173,7 +173,7 @@ export const PharmacyConcernPage: React.FC = () => {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="pl-3.5 pr-8 py-2 rounded-xl bg-white border border-[#CBDAC6] text-xs sm:text-sm font-bold text-[#16241B] focus:outline-hidden focus:ring-1 focus:ring-[#1F4B43] shadow-2xs cursor-pointer appearance-none"
+                    className="pl-3.5 pr-8 py-2 rounded-xl bg-white border border-[#CBDAC6] text-xs sm:text-sm font-bold text-[#16241B] focus:outline-hidden focus:ring-1 focus:ring-[#009E66] shadow-2xs cursor-pointer appearance-none"
                   >
                     <option value="featured">Best selling</option>
                     <option value="price-asc">Price: Low to High</option>
@@ -190,14 +190,14 @@ export const PharmacyConcernPage: React.FC = () => {
                 onClick={() => setShowFiltersPanel((prev) => !prev)}
                 className={`px-3.5 py-2 rounded-xl border text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
                   showFiltersPanel || activeFiltersCount > 0
-                    ? 'bg-[#1F4B43] text-white border-[#1F4B43] shadow-xs'
-                    : 'bg-white border-[#CBDAC6] text-[#16241B] hover:border-[#1F4B43]'
+                    ? 'bg-[#009E66] text-white border-[#009E66] shadow-xs'
+                    : 'bg-white border-[#CBDAC6] text-[#16241B] hover:border-[#009E66]'
                 }`}
               >
                 <SlidersHorizontal className="w-3.5 h-3.5" />
                 <span>Filters</span>
                 {activeFiltersCount > 0 && (
-                  <span className="w-4.5 h-4.5 rounded-full bg-white text-[#1F4B43] text-[11px] font-black flex items-center justify-center">
+                  <span className="w-4.5 h-4.5 rounded-full bg-white text-[#009E66] text-[11px] font-black flex items-center justify-center">
                     {activeFiltersCount}
                   </span>
                 )}
@@ -211,7 +211,7 @@ export const PharmacyConcernPage: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={`Search in ${currentConcern?.title}...`}
-                  className="pl-8 pr-7 py-2 rounded-xl bg-white border border-[#CBDAC6] text-xs sm:text-sm text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-1 focus:ring-[#1F4B43] shadow-2xs w-full sm:w-56"
+                  className="pl-8 pr-7 py-2 rounded-xl bg-white border border-[#CBDAC6] text-xs sm:text-sm text-[#16241B] placeholder-[#88998C] focus:outline-hidden focus:ring-1 focus:ring-[#009E66] shadow-2xs w-full sm:w-56"
                 />
                 {searchQuery && (
                   <button
@@ -250,7 +250,7 @@ export const PharmacyConcernPage: React.FC = () => {
                   <div>
                     <div className="flex items-center justify-between text-xs font-bold mb-2">
                       <span className="text-[#16241B]/70">Max Price:</span>
-                      <span className="text-[#1F4B43] font-black">{formatCurrency(maxPrice)}</span>
+                      <span className="text-[#009E66] font-black">{formatCurrency(maxPrice)}</span>
                     </div>
                     <div className="relative flex items-center">
                       <input
@@ -260,7 +260,7 @@ export const PharmacyConcernPage: React.FC = () => {
                         step="50"
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(Number(e.target.value))}
-                        className="w-full h-2 bg-[#16241B]/10 rounded-lg appearance-none cursor-pointer accent-[#1F4B43]"
+                        className="w-full h-2 bg-[#16241B]/10 rounded-lg appearance-none cursor-pointer accent-[#009E66]"
                       />
                     </div>
                   </div>
@@ -272,8 +272,8 @@ export const PharmacyConcernPage: React.FC = () => {
                       onClick={() => setPrescriptionOnly((p) => !p)}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                         prescriptionOnly
-                          ? 'bg-[#E1694F] text-white border-[#E1694F] shadow-sm'
-                          : 'bg-white text-[#16241B]/80 border-[#16241B]/10 hover:border-[#E1694F]'
+                          ? 'bg-[#EF7C3C] text-white border-[#EF7C3C] shadow-sm'
+                          : 'bg-white text-[#16241B]/80 border-[#16241B]/10 hover:border-[#EF7C3C]'
                       }`}
                     >
                       <ShieldCheck className="w-4 h-4" />
@@ -309,7 +309,7 @@ export const PharmacyConcernPage: React.FC = () => {
                 <span className="text-xs font-semibold text-[#16241B]/50 mr-1">Active Filters:</span>
 
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#CBDAC6] text-[#1F4B43] shadow-2xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#CBDAC6] text-[#009E66] shadow-2xs">
                     Keyword: "{searchQuery}"
                     <button
                       type="button"
@@ -322,7 +322,7 @@ export const PharmacyConcernPage: React.FC = () => {
                 )}
 
                 {maxPrice < 5000 && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#CBDAC6] text-[#1F4B43] shadow-2xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#CBDAC6] text-[#009E66] shadow-2xs">
                     Under {formatCurrency(maxPrice)}
                     <button
                       type="button"
@@ -335,7 +335,7 @@ export const PharmacyConcernPage: React.FC = () => {
                 )}
 
                 {prescriptionOnly && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#E1694F]/30 text-[#E1694F] shadow-2xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-white border border-[#EF7C3C]/30 text-[#EF7C3C] shadow-2xs">
                     Rx Required
                     <button
                       type="button"
@@ -431,7 +431,7 @@ export const PharmacyConcernPage: React.FC = () => {
               </div>
               <Link
                 to="/pharmacy"
-                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#1F4B43] hover:text-[#009E66] hover:underline"
+                className="hidden sm:inline-flex items-center gap-1.5 text-xs font-bold text-[#009E66] hover:text-[#009E66] hover:underline"
               >
                 <span>View All</span>
                 <ChevronRight className="w-3.5 h-3.5" />
