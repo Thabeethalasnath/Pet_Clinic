@@ -1,9 +1,7 @@
--- Migration V8: Sync vet ratings with real vet_reviews and set fees to 500-700 INR based on experience
+-- Migration V8: Initialize vet ratings and set fees to 500-700 INR based on experience
 
--- 1. Sync reviews_count and rating from vet_reviews table
-UPDATE vets v SET
-  v.reviews_count = (SELECT COUNT(*) FROM vet_reviews vr WHERE vr.vet_id = v.id),
-  v.rating = (SELECT ROUND(AVG(vr.rating), 1) FROM vet_reviews vr WHERE vr.vet_id = v.id);
+-- 1. Initialize reviews_count to 0 for vets that have no reviews yet
+UPDATE vets SET reviews_count = 0 WHERE reviews_count IS NULL;
 
 -- 2. Clear rating for vets with 0 reviews so they correctly display "No reviews yet"
 UPDATE vets SET rating = NULL WHERE reviews_count = 0 OR reviews_count IS NULL;
