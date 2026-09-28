@@ -24,8 +24,6 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-import { FALLBACK_ARTICLES } from '../../data/mockArticles';
-
 interface ArticleDto {
   id: number;
   title: string;
@@ -68,8 +66,8 @@ export const HealthTipsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('All Tips');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [articles, setArticles] = useState<ArticleDto[]>(FALLBACK_ARTICLES);
-  const [loading, setLoading] = useState(false);
+  const [articles, setArticles] = useState<ArticleDto[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const filterTabs = [
@@ -122,10 +120,11 @@ export const HealthTipsPage: React.FC = () => {
             existingTitles.add(tip.title.toLowerCase().trim());
           }
         }
-        setArticles(combined.length > 0 ? combined : FALLBACK_ARTICLES);
+        setArticles(combined);
       })
-      .catch(() => {
-        setArticles(FALLBACK_ARTICLES);
+      .catch((err) => {
+        setError(err?.message || 'Failed to load health tips');
+        setArticles([]);
       })
       .finally(() => {
         setLoading(false);

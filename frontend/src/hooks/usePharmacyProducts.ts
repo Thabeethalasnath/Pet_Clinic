@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../lib/axios';
 import type { ProductItemData } from '../components/products/ProductCard';
-import { FALLBACK_PRODUCTS } from '../data/mockProducts';
 
 interface UsePharmacyProductsReturn {
   products: ProductItemData[];
@@ -11,10 +10,8 @@ interface UsePharmacyProductsReturn {
 }
 
 export const usePharmacyProducts = (): UsePharmacyProductsReturn => {
-  const [products, setProducts] = useState<ProductItemData[]>(() =>
-    FALLBACK_PRODUCTS.filter((p) => p.productType === 'PHARMACY' || !p.productType)
-  );
-  const [loading, setLoading] = useState<boolean>(false);
+  const [products, setProducts] = useState<ProductItemData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProducts = useCallback(() => {
@@ -23,19 +20,11 @@ export const usePharmacyProducts = (): UsePharmacyProductsReturn => {
     apiClient
       .get<ProductItemData[]>('/products')
       .then((res) => {
-        if (res.data && res.data.length > 0) {
-          setProducts(res.data);
-        } else {
-          setProducts(
-            FALLBACK_PRODUCTS.filter((p) => p.productType === 'PHARMACY' || !p.productType)
-          );
-        }
+        setProducts(res.data || []);
       })
-      .catch(() => {
-        // Gracefully use fallback pharmacy products
-        setProducts(
-          FALLBACK_PRODUCTS.filter((p) => p.productType === 'PHARMACY' || !p.productType)
-        );
+      .catch((err) => {
+        setError(err.message || 'Failed to load pharmacy products');
+        setProducts([]);
       })
       .finally(() => {
         setLoading(false);
